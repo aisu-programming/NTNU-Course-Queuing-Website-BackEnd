@@ -1,1 +1,20 @@
+# Environment
+python-dotenv
+
+# Database
+pymysql
+
+# Back-End
 flask
+flask-cors
+flask-sqlalchemy
+pycryptodomex
+PyJWT
+
+# NTNU website
+selenium-wire
+requests
+
+# Deep Learning for Validation Code
+tensorflow==2.4.0
+Pillow

@@ -1,0 +1,12 @@
+# Virtual Environment
+venv*
+
+# Python
+*.pyc
+
+# Programming
+.config
+test.py
+
+# NTNU Course Taking
+ntnu/chromedriver_win32
