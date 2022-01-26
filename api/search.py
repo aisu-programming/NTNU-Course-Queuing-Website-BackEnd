@@ -8,6 +8,7 @@ from api.utils.response import *
 from database.model import CourseObject
 
 
+
 ''' Settings '''
 __all__ = ["login_required", "search_api"]
 search_api = Blueprint("search_api", __name__)

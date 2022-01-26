@@ -1,23 +1,26 @@
 ''' Configurations '''
+import os
 from dotenv import load_dotenv
 load_dotenv(".config/db.env")
 load_dotenv(".config/flask.env")
 load_dotenv(".config/model.env")
+os.environ["ROOT_PATH"] = os.path.dirname(os.path.abspath(__file__))
 
 
 
 ''' Libraries '''
 # Common
-import os
 import logging
-import threading
+# import threading
 # Flask
 from flask import Flask
 from flask_cors import CORS
 from api.auth import auth_api
 from database.model import db
 # NTNU
-from ntnu.main import get_all_orders
+
+# Test
+from database.model import import_courses
 
 
 
@@ -30,6 +33,7 @@ DB_NAME     = os.environ.get("DB_NAME")
 
 
 ''' Settings '''
+logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.INFO)
 app = Flask(__name__)
 # app.config['DEBUG'] = True
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -53,7 +57,8 @@ def hello_world():
 
 @app.before_first_request
 def activate_ntnu_course_taking():
-    get_all_orders()
+    import_courses()
+    pass
 
 
 

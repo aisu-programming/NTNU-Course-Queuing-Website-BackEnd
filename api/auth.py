@@ -7,7 +7,7 @@ from flask import Blueprint, request
 from exceptions import *
 from api.utils.request import Request
 from api.utils.response import *
-from api.utils.test import jwt_decode
+from api.utils.jwt import jwt_decode
 from api.model import User
 # from database.model import UserObject
 
