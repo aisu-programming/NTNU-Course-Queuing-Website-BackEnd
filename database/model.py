@@ -2,7 +2,7 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column
-from sqlalchemy.dialects.mysql import TINYINT, VARCHAR, VARBINARY, BIT, BOOLEAN, DATETIME
+from sqlalchemy.dialects.mysql import TINYINT, VARCHAR, VARBINARY, BIT, BOOLEAN, DATETIME, LONGBLOB
 
 from database.utils import AES_encode, AES_decode
 
@@ -16,7 +16,7 @@ class UserObject(db.Model):
     __tablename__ = 'users'
     id         = Column(TINYINT(unsigned=True), primary_key=True)
     student_id = Column(VARCHAR(9),    nullable=False, unique=True)
-    password   = Column(VARBINARY(16), nullable=False)
+    password   = Column(VARBINARY(48), nullable=False)
     name       = Column(VARCHAR(10),   nullable=False)
     # grade      = Column(TINYINT(unsigned=True))
     major      = Column(VARCHAR(4),    nullable=False)
@@ -36,7 +36,8 @@ class UserObject(db.Model):
 
     @property
     def original_password(self):
-        return AES_decode(self.password)
+        password = AES_decode(self.password)
+        return password
 
     def register(self):
         db.session.add(self)
@@ -51,24 +52,26 @@ class UserObject(db.Model):
 
 class CourseObject(db.Model):
     __tablename__ = 'courses'
-    id          = Column(TINYINT(unsigned=True), primary_key=True)
-    course_id   = Column(VARCHAR(4),  nullable=False, unique=True)
-    course_code = Column(VARCHAR(9),  nullable=False, unique=True)
-    name        = Column(VARCHAR(30), nullable=False)
-    subject     = Column(VARCHAR(4),  nullable=False)
-    time_1      = Column(BIT(45),     nullable=False)
-    time_2      = Column(BIT(46),     nullable=False)
+    id           = Column(TINYINT(unsigned=True), primary_key=True)
+    course_id    = Column(VARCHAR(4),   nullable=False, unique=True)
+    course_code  = Column(VARCHAR(9),   nullable=False)
+    chinese_name = Column(VARCHAR(30),  nullable=False)
+    english_name = Column(VARCHAR(150), nullable=False)
+    credit       = Column(TINYINT,      nullable=False)
+    subject      = Column(VARCHAR(4),   nullable=False)
+    time         = Column(LONGBLOB(91), nullable=False)
 
     def __init__(
-        self, course_id, course_code,
-        name, subject, time_1, time_2
+        self, course_id, course_code, chinese_name, english_name, 
+        credit, subject, time
     ):
-        self.course_id   = course_id
-        self.course_code = course_code
-        self.name        = name
-        self.subject     = subject
-        self.time_1      = time_1
-        self.time_2      = time_2
+        self.course_id    = course_id
+        self.course_code  = course_code
+        self.chinese_name = chinese_name
+        self.english_name = english_name
+        self.credit       = credit
+        self.subject      = subject
+        self.time         = time
 
 
 class OrderObject(db.Model):
@@ -83,3 +86,29 @@ class OrderObject(db.Model):
     def __init__(self, user_id, course_id):
         self.user_id   = user_id
         self.course_id = course_id
+
+
+def import_courses():
+    import os, json
+    ROOT_PATH = os.environ.get("ROOT_PATH")
+    with open(f"{ROOT_PATH}/courses_2022-2.json", encoding="utf-8") as json_file:
+        courses = json.load(json_file)["List"]
+    weekdict = dict(zip(['一', '二', '三', '四', '五', '六'], list(range(6))))
+    for course in courses:
+        # course_id   = course["serialNo"]
+        # course_code = course["courseCode"]
+        # name        = course["chnName"]
+        # credit      = int(course["credit"])
+        # subject     = course["deptCode"]
+        # teacher     = course["teacher"]
+        # limit_count = course["limitCountH"]
+
+        time_info = course["timeInfo"]
+        if time_info == "◎密集課程":
+            time_1, time_2 = 0, 1
+        elif len(time_info.split(',')) == 1:
+            time_info = time_info.split(' ')
+            weekday = weekdict[time_info[0]]
+            
+        # CourseObject
+    return

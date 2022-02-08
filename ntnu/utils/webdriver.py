@@ -22,14 +22,16 @@ dl_model = model
 
 
 ''' Parameters '''
-PATH            = os.path.abspath(__file__)
-DIR_PATH        = os.path.dirname(PATH)
-WEBDRIVER_PATH  = os.path.join(os.path.dirname(DIR_PATH), "chromedriver_win32/chromedriver.exe")
+ROOT_PATH       = os.environ.get("ROOT_PATH")
+WEBDRIVER_PATH  = f"{ROOT_PATH}/ntnu/chromedriver_win32/chromedriver.exe"
+
 RESIZE_HEIGHT   = int(os.environ.get("RESIZE_HEIGHT"))
 RESIZE_WIDTH    = int(os.environ.get("RESIZE_WIDTH"))
 
 NTNU_WEBSITE_NO       = os.environ.get("NTNU_WEBSITE_NO")
-NTNU_WEBSITE_PREFIX   = f"https://cos{NTNU_WEBSITE_NO}s.ntnu.edu.tw/AasEnrollStudent"
+NTNU_WEBSITE_HOST     = f"cos{NTNU_WEBSITE_NO}s.ntnu.edu.tw"
+NTNU_WEBSITE_URL      = f"https://{NTNU_WEBSITE_HOST}"
+NTNU_WEBSITE_PREFIX   = f"{NTNU_WEBSITE_URL}/AasEnrollStudent"
 NTNU_LOGIN_CHECK_URL  = f"{NTNU_WEBSITE_PREFIX}/LoginCheckCtrl?language=TW"
 NTNU_COURSE_QUERY_URL = f"{NTNU_WEBSITE_PREFIX}/CourseQueryCtrl"
 NTNU_ENROLL_URL       = f"{NTNU_WEBSITE_PREFIX}/EnrollCtrl"

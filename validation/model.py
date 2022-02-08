@@ -1,12 +1,22 @@
 ''' Libraries '''
 import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = '1'
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+import sys
 import numpy as np
+print("Importing tensorflow... ", end='')
+sys.stdout.flush()
 import tensorflow as tf
-gpus = tf.config.experimental.list_physical_devices('GPU')
+print("finished")
+
+
+
+''' Settings '''
+gpus = tf.config.experimental.list_physical_devices("GPU")
 if gpus:
     try:
         tf.config.experimental.set_virtual_device_configuration(
-            gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)]
+            gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)]
         )
     except RuntimeError as e:
         print(e)
@@ -134,5 +144,8 @@ class Model():
 
     
 ''' Script '''
+print("Model initialization & first try... ", end='')
+sys.stdout.flush()
 model = Model()
 model.predict(np.zeros((RESIZE_HEIGHT, RESIZE_WIDTH), dtype=np.float))
+print("finished")

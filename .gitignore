@@ -10,3 +10,7 @@ test.py
 
 # NTNU Course Taking
 ntnu/chromedriver_win32
+
+# Others
+*.json
+*.msi
