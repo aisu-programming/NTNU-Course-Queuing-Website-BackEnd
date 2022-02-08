@@ -1,14 +1,15 @@
 ''' Libraries '''
 import os
+import jwt
 import time
 import json
 import logging
 import requests
 from datetime import datetime, timedelta
 
-from database.model import UserObject, CourseObject, OrderObject
+from database.model import UserObject, OrderObject
 from ntnu.utils.webdriver import login_course_taking_system, login_iportal, NTNU_WEBSITE_HOST, NTNU_WEBSITE_URL, NTNU_COURSE_QUERY_URL, NTNU_ENROLL_URL
-from ntnu.utils.departments import department_str_to_code
+from mapping import department_text2code
 
 
 
@@ -46,7 +47,7 @@ class User():
 
     def __register(self):
         name, major = self.set_cookie()
-        major = department_str_to_code[major]
+        major = department_text2code[major]
         self.user = UserObject(self.student_id, self.password, name, major)
         self.user.register()
         return
@@ -71,6 +72,15 @@ class User():
         history = login_iportal(self.student_id, self.password)
         self.history = json.load(history)
         return
+
+    @property
+    def jwt(self):
+        payload = {
+            "iss"   : JWT_ISSUER,
+            "exp"   : datetime.utcnow() + JWT_EXPIRE,
+            "data"  : { "student_id": self.student_id }
+        }
+        return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
 
 class Agent(User):

@@ -10,6 +10,8 @@ flask-cors
 flask-sqlalchemy
 pycryptodomex
 PyJWT
+tqdm
+bitstring
 
 # NTNU website
 selenium-wire

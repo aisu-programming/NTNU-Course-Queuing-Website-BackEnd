@@ -1,10 +1,14 @@
 ''' Libraries '''
+import os
+import json
+from tqdm import tqdm
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column
-from sqlalchemy.dialects.mysql import TINYINT, VARCHAR, VARBINARY, BIT, BOOLEAN, DATETIME, LONGBLOB
+from sqlalchemy.dialects.mysql import TINYINT, SMALLINT, CHAR, VARCHAR, BINARY, BIT, BOOLEAN, DATETIME
 
-from database.utils import AES_encode, AES_decode
+from mapping import department_code2id
+from database.utils import AES_encode, AES_decode, process_time_info
 
 
 
@@ -15,12 +19,12 @@ db = SQLAlchemy()
 class UserObject(db.Model):
     __tablename__ = 'users'
     id         = Column(TINYINT(unsigned=True), primary_key=True)
-    student_id = Column(VARCHAR(9),    nullable=False, unique=True)
-    password   = Column(VARBINARY(48), nullable=False)
-    name       = Column(VARCHAR(10),   nullable=False)
+    student_id = Column(CHAR(9),     nullable=False, unique=True)
+    password   = Column(BINARY(48),  nullable=False)
+    name       = Column(VARCHAR(10), nullable=False)
     # grade      = Column(TINYINT(unsigned=True))
-    major      = Column(VARCHAR(4),    nullable=False)
-    level      = Column(TINYINT,       default=1)
+    major      = Column(VARCHAR(4),  nullable=False)
+    level      = Column(TINYINT,     default=1)
     major_2    = Column(VARCHAR(4))
     minor      = Column(VARCHAR(4))
 
@@ -52,18 +56,20 @@ class UserObject(db.Model):
 
 class CourseObject(db.Model):
     __tablename__ = 'courses'
-    id           = Column(TINYINT(unsigned=True), primary_key=True)
-    course_id    = Column(VARCHAR(4),   nullable=False, unique=True)
-    course_code  = Column(VARCHAR(9),   nullable=False)
+    id           = Column(SMALLINT(unsigned=True), primary_key=True)
+    course_id    = Column(CHAR(4),      nullable=False, unique=True)
+    course_code  = Column(CHAR(9),      nullable=False)
     chinese_name = Column(VARCHAR(30),  nullable=False)
     english_name = Column(VARCHAR(150), nullable=False)
     credit       = Column(TINYINT,      nullable=False)
-    subject      = Column(VARCHAR(4),   nullable=False)
-    time         = Column(LONGBLOB(91), nullable=False)
+    subject      = Column(BINARY(22),   nullable=False)  # 170 / 8 bits = 21.??? bytes
+    time_info    = Column(VARCHAR(100), nullable=False)
+    time         = Column(BINARY(12),   nullable=False)  # 91 / 8 bits = 11.??? bytes
+    place        = Column(BIT(3),       nullable=False)  # 本部, 公館, 其他
 
     def __init__(
         self, course_id, course_code, chinese_name, english_name, 
-        credit, subject, time
+        credit, subject, time_info, time, place
     ):
         self.course_id    = course_id
         self.course_code  = course_code
@@ -71,7 +77,14 @@ class CourseObject(db.Model):
         self.english_name = english_name
         self.credit       = credit
         self.subject      = subject
+        self.time_info    = time_info
         self.time         = time
+        self.place        = place
+
+    def register(self):
+        db.session.add(self)
+        db.session.commit()
+        return
 
 
 class OrderObject(db.Model):
@@ -89,26 +102,27 @@ class OrderObject(db.Model):
 
 
 def import_courses():
-    import os, json
     ROOT_PATH = os.environ.get("ROOT_PATH")
     with open(f"{ROOT_PATH}/courses_2022-2.json", encoding="utf-8") as json_file:
         courses = json.load(json_file)["List"]
-    weekdict = dict(zip(['一', '二', '三', '四', '五', '六'], list(range(6))))
-    for course in courses:
-        # course_id   = course["serialNo"]
-        # course_code = course["courseCode"]
-        # name        = course["chnName"]
-        # credit      = int(course["credit"])
-        # subject     = course["deptCode"]
-        # teacher     = course["teacher"]
-        # limit_count = course["limitCountH"]
+    for course in tqdm(courses, desc="Importing course", ascii=True):
+        course_id    = course["serialNo"]
+        course_code  = course["courseCode"]
+        chinese_name = course["chnName"]
+        english_name = course["engName"]
+        credit       = course["credit"]
+        subject      = course["deptCode"]
+        # teacher      = course["teacher"]
+        # limit_count  = course["limitCountH"]
+        time_info    = course["timeInfo"]
 
-        time_info = course["timeInfo"]
-        if time_info == "◎密集課程":
-            time_1, time_2 = 0, 1
-        elif len(time_info.split(',')) == 1:
-            time_info = time_info.split(' ')
-            weekday = weekdict[time_info[0]]
-            
-        # CourseObject
+        credit = int(float(credit))
+        subject = department_code2id[subject]
+        tmp = [0] * 170
+        tmp[subject] = 1
+        subject = int(''.join(str(s) for s in tmp), base=2).to_bytes(22, byteorder='big')
+        time, place = process_time_info(time_info)
+        
+        CourseObject(course_id, course_code, chinese_name, english_name, credit, subject, time_info, time, place).register()
+        
     return

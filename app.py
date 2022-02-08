@@ -17,10 +17,6 @@ from flask import Flask
 from flask_cors import CORS
 from api.auth import auth_api
 from database.model import db
-# NTNU
-
-# Test
-from database.model import import_courses
 
 
 
@@ -55,10 +51,16 @@ def hello_world():
     return f"<p>Hello world!</p>"
 
 
+# @app.before_first_request
+# def activate_ntnu_course_taking():
+#     pass
+
+
 @app.before_first_request
-def activate_ntnu_course_taking():
-    import_courses()
-    pass
+def test():
+    from test import main
+    main()
+    return
 
 
 

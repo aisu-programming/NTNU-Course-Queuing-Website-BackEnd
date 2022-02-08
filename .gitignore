@@ -10,6 +10,7 @@ test.py
 
 # NTNU Course Taking
 ntnu/chromedriver_win32
+*.h5
 
 # Others
 *.json

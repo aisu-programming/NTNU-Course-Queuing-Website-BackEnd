@@ -8,8 +8,7 @@ from exceptions import *
 from api.utils.request import Request
 from api.utils.response import *
 from api.utils.jwt import jwt_decode
-from api.model import User
-# from database.model import UserObject
+from ntnu.model import User
 
 
 ''' Settings '''
