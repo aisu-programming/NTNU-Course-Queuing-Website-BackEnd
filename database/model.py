@@ -5,7 +5,9 @@ from tqdm import tqdm
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column
-from sqlalchemy.dialects.mysql import TINYINT, SMALLINT, CHAR, VARCHAR, BINARY, BIT, BOOLEAN, DATETIME
+from sqlalchemy.dialects.mysql import \
+    TINYINT, SMALLINT, CHAR, VARCHAR, \
+    FLOAT, BINARY, BIT, BOOLEAN, DATETIME
 
 from mapping import department_code2id
 from database.utils import AES_encode, AES_decode, process_time_info
@@ -58,18 +60,19 @@ class CourseObject(db.Model):
     __tablename__ = 'courses'
     id           = Column(SMALLINT(unsigned=True), primary_key=True)
     course_id    = Column(CHAR(4),      nullable=False, unique=True)
-    course_code  = Column(CHAR(9),      nullable=False)
-    chinese_name = Column(VARCHAR(30),  nullable=False)
-    english_name = Column(VARCHAR(150), nullable=False)
-    credit       = Column(TINYINT,      nullable=False)
+    course_code  = Column(CHAR(7),      nullable=False)
+    chinese_name = Column(VARCHAR(80),  nullable=False)
+    english_name = Column(VARCHAR(120), nullable=False)
+    credit       = Column(FLOAT,        nullable=False)
     subject      = Column(BINARY(22),   nullable=False)  # 170 / 8 bits = 21.??? bytes
-    time_info    = Column(VARCHAR(100), nullable=False)
+    time_info    = Column(VARCHAR(150), nullable=False)
     time         = Column(BINARY(12),   nullable=False)  # 91 / 8 bits = 11.??? bytes
     place        = Column(BIT(3),       nullable=False)  # 本部, 公館, 其他
+    teacher      = Column(VARCHAR(30),  nullable=False)
 
     def __init__(
         self, course_id, course_code, chinese_name, english_name, 
-        credit, subject, time_info, time, place
+        credit, subject, time_info, time, place, teacher
     ):
         self.course_id    = course_id
         self.course_code  = course_code
@@ -80,6 +83,7 @@ class CourseObject(db.Model):
         self.time_info    = time_info
         self.time         = time
         self.place        = place
+        self.teacher      = teacher
 
     def register(self):
         db.session.add(self)
@@ -91,7 +95,7 @@ class OrderObject(db.Model):
     __tablename__ = 'orders'
     id               = Column(TINYINT(unsigned=True), primary_key=True)
     user_id          = Column(TINYINT(unsigned=True), db.ForeignKey('users.id'), nullable=False)
-    course_id        = Column(TINYINT(unsigned=True), db.ForeignKey('courses.id'), nullable=False)
+    course_id        = Column(SMALLINT(unsigned=True), db.ForeignKey('courses.id'), nullable=False)
     finished         = Column(BOOLEAN, default=False)
     insert_time      = Column(DATETIME, default=datetime.now)
     last_update_time = Column(DATETIME, onupdate=datetime.now, default=datetime.now)
@@ -112,17 +116,20 @@ def import_courses():
         english_name = course["engName"]
         credit       = course["credit"]
         subject      = course["deptCode"]
-        # teacher      = course["teacher"]
-        # limit_count  = course["limitCountH"]
         time_info    = course["timeInfo"]
+        teacher      = course["teacher"]
+        # eng_teaching    = course["engTeach"]
+        # limit_count     = course["limitCountH"]
+        # authorize_count = course["authorizeP"]
+        # option_code     = course["optionCode"]  # 必修, 選修, 通識
 
-        credit = int(float(credit))
+        credit = float(credit)
         subject = department_code2id[subject]
         tmp = [0] * 170
         tmp[subject] = 1
         subject = int(''.join(str(s) for s in tmp), base=2).to_bytes(22, byteorder='big')
         time, place = process_time_info(time_info)
         
-        CourseObject(course_id, course_code, chinese_name, english_name, credit, subject, time_info, time, place).register()
+        CourseObject(course_id, course_code, chinese_name, english_name, credit, subject, time_info, time, place, teacher).register()
         
     return

@@ -16,7 +16,7 @@ import logging
 from flask import Flask
 from flask_cors import CORS
 from api.auth import auth_api
-from database.model import db
+from database.model import db, CourseObject, import_courses
 
 
 
@@ -42,6 +42,8 @@ CORS(app)
 db.init_app(app)
 with app.app_context():
     db.create_all()
+    if db.session.query(CourseObject).count() == 0:
+        import_courses()
 
 
 
