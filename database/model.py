@@ -93,6 +93,7 @@ def import_courses():
     ROOT_PATH = os.environ.get("ROOT_PATH")
     with open(f"{ROOT_PATH}/courses_2022-2.json", encoding="utf-8") as json_file:
         courses = json.load(json_file)["List"]
+    weekdict = dict(zip(['一', '二', '三', '四', '五', '六'], list(range(6))))
     for course in courses:
         # course_id   = course["serialNo"]
         # course_code = course["courseCode"]
@@ -104,11 +105,10 @@ def import_courses():
 
         time_info = course["timeInfo"]
         if time_info == "◎密集課程":
-            time_1, time_2 = by(0), 1
+            time_1, time_2 = 0, 1
         elif len(time_info.split(',')) == 1:
             time_info = time_info.split(' ')
-            weekday = dict(zip(['一', '二', '三', '四', '五', '六'], list(range(6))))[time_info[0]]
-            
+            weekday = weekdict[time_info[0]]
             
         # CourseObject
     return
