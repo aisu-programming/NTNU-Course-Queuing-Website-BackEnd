@@ -132,7 +132,7 @@ class OrderObject(db.Model):
 
 def import_courses():
     ROOT_PATH = os.environ.get("ROOT_PATH")
-    with open(f"{ROOT_PATH}/courses_2022-2.json", encoding="utf-8") as json_file:
+    with open(f"{ROOT_PATH}/data/courses_2022-2.json", encoding="utf-8") as json_file:
         courses = json.load(json_file)["List"]
         
     for ei, course in tqdm(enumerate(courses), desc="Importing course", ascii=True):

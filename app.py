@@ -12,11 +12,12 @@ os.environ["ROOT_PATH"] = os.path.dirname(os.path.abspath(__file__))
 # Common
 import logging
 # import threading
+from datetime import datetime
 # Flask
 from flask import Flask
 from flask_cors import CORS
 from api.auth import auth_api
-from api.search import search_api
+from api.course import course_api
 from database.model import db, CourseObject, import_courses
 
 
@@ -30,15 +31,15 @@ DB_NAME     = os.environ.get("DB_NAME")
 
 
 ''' Settings '''
-logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.INFO)
+logging.basicConfig(filename=f"log/{datetime.now().strftime('%Y.%m.%d-%H.%M')}.log", encoding="utf-8",
+                    format="[%(levelname)s] %(asctime)s | %(filename)s: %(funcName)s | %(message)s", level=logging.INFO)
 app = Flask(__name__)
 # app.config['DEBUG'] = True
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
-# app.url_map.strict_slashes = False
+app.url_map.strict_slashes = False
 app.register_blueprint(auth_api, url_prefix="/auth")
-app.register_blueprint(search_api, url_prefix="/search")
-# app.register_blueprint(profile_api, url_prefix="/profile")
+app.register_blueprint(course_api, url_prefix="/course")
 CORS(app)
 db.init_app(app)
 with app.app_context():
