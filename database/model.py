@@ -64,24 +64,36 @@ class CourseObject(db.Model):
     chinese_name = Column(VARCHAR(80),  nullable=False)
     english_name = Column(VARCHAR(120), nullable=False)
     credit       = Column(FLOAT,        nullable=False)
-    subject      = Column(BINARY(22),   nullable=False)  # 170 / 8 bits = 21.??? bytes
+    # department: 169 bits
+    department   = Column(CHAR(4),      nullable=False)
+    department_1 = Column(BIT(64),      nullable=False) 
+    department_2 = Column(BIT(64),      nullable=False)
+    department_3 = Column(BIT(41),      nullable=False)
     time_info    = Column(VARCHAR(150), nullable=False)
-    time         = Column(BINARY(12),   nullable=False)  # 91 / 8 bits = 11.??? bytes
-    place        = Column(BIT(3),       nullable=False)  # 本部, 公館, 其他
+    # time: 91 bits
+    time_1       = Column(BIT(64),      nullable=False)
+    time_2       = Column(BIT(27),      nullable=False)
+    # place: 3 bits (本部, 公館, 其他)
+    place        = Column(BIT(3),       nullable=False)
     teacher      = Column(VARCHAR(30),  nullable=False)
 
     def __init__(
-        self, course_id, course_code, chinese_name, english_name, 
-        credit, subject, time_info, time, place, teacher
+        self, course_id, course_code, chinese_name, english_name,
+        credit, department, department_1, department_2, department_3,
+        time_info, time_1, time_2, place, teacher
     ):
         self.course_id    = course_id
         self.course_code  = course_code
         self.chinese_name = chinese_name
         self.english_name = english_name
         self.credit       = credit
-        self.subject      = subject
+        self.department   = department
+        self.department_1 = department_1
+        self.department_2 = department_2
+        self.department_3 = department_3
         self.time_info    = time_info
-        self.time         = time
+        self.time_1       = time_1
+        self.time_2       = time_2
         self.place        = place
         self.teacher      = teacher
 
@@ -89,6 +101,19 @@ class CourseObject(db.Model):
         db.session.add(self)
         db.session.commit()
         return
+
+    @property
+    def json(self):
+        return {
+            "courseId"   : self.course_id,
+            "courseCode" : self.course_code,
+            "chineseName": self.chinese_name,
+            "englishName": self.english_name,
+            "credit"     : self.credit,
+            "department" : self.department,
+            "timeInfo"   : self.time_info,
+            "teacher"    : self.teacher,
+        }
 
 
 class OrderObject(db.Model):
@@ -109,13 +134,14 @@ def import_courses():
     ROOT_PATH = os.environ.get("ROOT_PATH")
     with open(f"{ROOT_PATH}/courses_2022-2.json", encoding="utf-8") as json_file:
         courses = json.load(json_file)["List"]
-    for course in tqdm(courses, desc="Importing course", ascii=True):
+        
+    for ei, course in tqdm(enumerate(courses), desc="Importing course", ascii=True):
         course_id    = course["serialNo"]
         course_code  = course["courseCode"]
         chinese_name = course["chnName"]
         english_name = course["engName"]
         credit       = course["credit"]
-        subject      = course["deptCode"]
+        department   = course["deptCode"]
         time_info    = course["timeInfo"]
         teacher      = course["teacher"]
         # eng_teaching    = course["engTeach"]
@@ -124,12 +150,15 @@ def import_courses():
         # option_code     = course["optionCode"]  # 必修, 選修, 通識
 
         credit = float(credit)
-        subject = department_code2id[subject]
-        tmp = [0] * 170
-        tmp[subject] = 1
-        subject = int(''.join(str(s) for s in tmp), base=2).to_bytes(22, byteorder='big')
-        time, place = process_time_info(time_info)
+        tmp = [0] * 169
+        tmp[department_code2id[department]] = 1
+        department_1 = int(''.join(str(s) for s in tmp[   : 64]), base=2)
+        department_2 = int(''.join(str(s) for s in tmp[ 64:128]), base=2)
+        department_3 = int(''.join(str(s) for s in tmp[128:   ]), base=2)
+        time_1, time_2, place = process_time_info(time_info)
         
-        CourseObject(course_id, course_code, chinese_name, english_name, credit, subject, time_info, time, place, teacher).register()
+        course = CourseObject(course_id, course_code, chinese_name, english_name, credit, department, department_1, department_2, department_3, time_info, time_1, time_2, place, teacher)
+        course.register()
         
+    print('')
     return

@@ -4,6 +4,9 @@ class BrowserStuckException(Exception):
 class PasswordWrongException(Exception):
     pass
 
+class DataIncorrectException(Exception):
+    pass
+
 # class CourseTakenException(Exception):
 #     pass
 

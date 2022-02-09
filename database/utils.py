@@ -55,6 +55,7 @@ def process_time_info(time_info):
             if place in place_array: place = place_array.index(place)
             else                   : place = 2
             total_place[place] = 1
-    total_time  = int(''.join(str(t) for t in total_time),  base=2).to_bytes(12, byteorder='big')
-    total_place = int(''.join(str(p) for p in total_place), base=2)
-    return total_time, total_place
+    total_time_1 = int(''.join(str(t) for t in total_time[:64]), base=2)
+    total_time_2 = int(''.join(str(t) for t in total_time[64:]), base=2)
+    total_place  = int(''.join(str(p) for p in total_place)    , base=2)
+    return total_time_1, total_time_2, total_place

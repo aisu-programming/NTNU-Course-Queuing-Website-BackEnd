@@ -16,6 +16,7 @@ import logging
 from flask import Flask
 from flask_cors import CORS
 from api.auth import auth_api
+from api.search import search_api
 from database.model import db, CourseObject, import_courses
 
 
@@ -36,8 +37,8 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
 # app.url_map.strict_slashes = False
 app.register_blueprint(auth_api, url_prefix="/auth")
+app.register_blueprint(search_api, url_prefix="/search")
 # app.register_blueprint(profile_api, url_prefix="/profile")
-# app.register_blueprint(search_api, url_prefix="/search")
 CORS(app)
 db.init_app(app)
 with app.app_context():
