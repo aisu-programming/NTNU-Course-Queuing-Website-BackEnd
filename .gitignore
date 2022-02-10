@@ -6,6 +6,7 @@ venv*
 
 # Programming
 .config
+logs
 test.py
 
 # NTNU website

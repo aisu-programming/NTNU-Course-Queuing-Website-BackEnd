@@ -1,18 +1,20 @@
 ''' Libraries '''
 import base64
+import logging
 from flask import Blueprint
 from bitstring import BitArray
 from sqlalchemy import or_, and_
 
 from exceptions import *
+from api.auth import login_required
 from api.utils.request import Request
 from api.utils.response import *
-from database.model import CourseObject
+from database.model import CourseObject, OrderObject
 
 
 
 ''' Settings '''
-__all__ = ["login_required", "course_api"]
+__all__ = ["course_api"]
 course_api = Blueprint("course_api", __name__)
 
 
@@ -22,9 +24,7 @@ course_api = Blueprint("course_api", __name__)
 @Request.json("id: str", "name: str", "department: str", "teacher: str", 
               "time: str", "place: int", "precise: bool")
 def search_course(id, name, department, teacher, time, place, precise):
-
     try:
-
         # id
         if id != "" and len(id) != 4:
             raise DataIncorrectException("Id form incorrect.")
@@ -85,12 +85,36 @@ def search_course(id, name, department, teacher, time, place, precise):
         courses = sorted([ c.json for c in courses ], key=lambda c: c["courseId"])
         return HTTPResponse("Success.", data={"amount": len(courses), "courses": courses})
 
-    except PasswordWrongException:
-        return HTTPError("Id or password incorrect.", 403)
-
     except DataIncorrectException as ex:
+        logging.error(f"DataIncorrectException: {str(ex)}")
         return HTTPError(str(ex), 403)
 
     except Exception as ex:
-        # logging
+        logging.error(f"Unknown exception: {str(ex)}")
+        return HTTPError(str(ex), 404)
+
+
+@course_api.route("/order", methods=["POST"])
+@login_required
+@Request.json("id: str")
+def order(user, id):
+    try:
+        if len(id) != 4:
+            raise DataIncorrectException("Id form incorrect.")
+        course = CourseObject.query.filter_by(course_id=id).all()
+        if len(course) != 1:
+            raise DataIncorrectException("Id incorrect.")
+        else:
+            course = course[0]
+
+        OrderObject(user.user.id, course.id).register()
+        logging.warning(f"User '{user.student_id}' ordered for course {id}.")
+        return HTTPResponse("Success.")
+
+    except DataIncorrectException as ex:
+        logging.error(f"DataIncorrectException: {str(ex)}")
+        return HTTPError(str(ex), 403)
+
+    except Exception as ex:
+        logging.error(f"Unknown exception: {str(ex)}")
         return HTTPError(str(ex), 404)

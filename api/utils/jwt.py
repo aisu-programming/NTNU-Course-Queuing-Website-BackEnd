@@ -13,8 +13,7 @@ JWT_ISSUER = os.environ.get("JWT_ISSUER")
 ''' Functions '''
 def jwt_decode(token):
     try:
-        json = jwt.decode(token, JWT_SECRET,
-                          issuer=JWT_ISSUER, algorithms="HS256")
+        json = jwt.decode(token, JWT_SECRET, issuer=JWT_ISSUER, algorithms="HS256")
     except jwt.exceptions.PyJWTError:
         return None
     return json

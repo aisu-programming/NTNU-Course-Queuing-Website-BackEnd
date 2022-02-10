@@ -122,12 +122,17 @@ class OrderObject(db.Model):
     user_id          = Column(TINYINT(unsigned=True), db.ForeignKey('users.id'), nullable=False)
     course_id        = Column(SMALLINT(unsigned=True), db.ForeignKey('courses.id'), nullable=False)
     finished         = Column(BOOLEAN, default=False)
-    insert_time      = Column(DATETIME, default=datetime.now)
+    register_time    = Column(DATETIME, default=datetime.now)
     last_update_time = Column(DATETIME, onupdate=datetime.now, default=datetime.now)
 
     def __init__(self, user_id, course_id):
         self.user_id   = user_id
         self.course_id = course_id
+
+    def register(self):
+        db.session.add(self)
+        db.session.commit()
+        return
 
 
 def import_courses():

@@ -1,6 +1,5 @@
 ''' Libraries '''
 import os
-import json
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
 

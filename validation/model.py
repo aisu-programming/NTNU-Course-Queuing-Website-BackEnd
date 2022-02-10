@@ -3,11 +3,11 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = '1'
 os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 import sys
-import numpy as np
 print("Importing tensorflow... ", end='')
 sys.stdout.flush()
 import tensorflow as tf
 print("finished")
+import numpy as np
 
 
 

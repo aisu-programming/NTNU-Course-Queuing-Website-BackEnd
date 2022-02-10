@@ -1,14 +1,13 @@
 ''' Libraries '''
-# import os
+import logging
 from functools import wraps
-# from datetime import timedelta
 from flask import Blueprint, request
 
 from exceptions import *
 from api.utils.request import Request
 from api.utils.response import *
 from api.utils.jwt import jwt_decode
-from ntnu.model import User
+from ntnu.model import User, UserObject
 
 
 ''' Settings '''
@@ -35,10 +34,10 @@ def login_required(func):
         json = jwt_decode(token)
         if json is None:
             return HTTPError("JWT token invalid.", 403)
-        # student_id = json["data"]["student_id"]
-        # password   = UserObject.query.filter_by(student_id=student_id).first().original_password
-        # User(student_id, password)
-        # kwargs["user"] = User(student_id, password)
+        student_id = json["data"]["student_id"]
+        password   = UserObject.query.filter_by(student_id=student_id).first().original_password
+        user = User(student_id, password)
+        kwargs["user"] = user
         return func(*args, **kwargs)
 
     return wrapper
@@ -47,7 +46,6 @@ def login_required(func):
 @auth_api.route("/session", methods=["GET", "POST"])
 def session():
 
-    # @login_required
     def logout():
         cookies = { "jwt": None }
         return HTTPResponse("Goodbye!", cookies=cookies)
@@ -58,10 +56,15 @@ def session():
             student_id = student_id.upper()
             user = User(student_id, password)
             cookies = { "jwt": user.jwt }
+            logging.warning(f"User '{student_id}' ({user.user.name}) has successfully logged in.")
             return HTTPResponse("Success.", cookies=cookies)
+
         except PasswordWrongException:
+            logging.error(f"PasswordWrongException: User '{student_id}'")
             return HTTPError("Id or password incorrect.", 403)
+
         except Exception as ex:
+            logging.error(f"Unknown exception: {str(ex)}")
             return HTTPError(str(ex), 404)
 
     methods = { "GET": logout, "POST": login }
