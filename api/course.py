@@ -94,27 +94,27 @@ def search_course(id, name, department, teacher, time, place, precise):
         return HTTPError(str(ex), 404)
 
 
-@course_api.route("/order", methods=["POST"])
-@login_required
-@Request.json("id: str")
-def order(user, id):
-    try:
-        if len(id) != 4:
-            raise DataIncorrectException("Id form incorrect.")
-        course = CourseObject.query.filter_by(course_id=id).all()
-        if len(course) != 1:
-            raise DataIncorrectException("Id incorrect.")
-        else:
-            course = course[0]
+# @course_api.route("/order", methods=["POST"])
+# @login_required
+# @Request.json("id: str")
+# def order(user, id):
+#     try:
+#         if len(id) != 4:
+#             raise DataIncorrectException("Id form incorrect.")
+#         course = CourseObject.query.filter_by(course_id=id).all()
+#         if len(course) != 1:
+#             raise DataIncorrectException("Id incorrect.")
+#         else:
+#             course = course[0]
 
-        OrderObject(user.user.id, course.id).register()
-        logging.warning(f"User '{user.student_id}' ordered for course {id}.")
-        return HTTPResponse("Success.")
+#         OrderObject(user.user.id, course.id).register()
+#         logging.warning(f"User '{user.student_id}' ordered for course {id}.")
+#         return HTTPResponse("Success.")
 
-    except DataIncorrectException as ex:
-        logging.error(f"DataIncorrectException: {str(ex)}")
-        return HTTPError(str(ex), 403)
+#     except DataIncorrectException as ex:
+#         logging.error(f"DataIncorrectException: {str(ex)}")
+#         return HTTPError(str(ex), 403)
 
-    except Exception as ex:
-        logging.error(f"Unknown exception: {str(ex)}")
-        return HTTPError(str(ex), 404)
+#     except Exception as ex:
+#         logging.error(f"Unknown exception: {str(ex)}")
+#         return HTTPError(str(ex), 404)
