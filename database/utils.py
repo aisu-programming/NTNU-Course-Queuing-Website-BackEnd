@@ -32,9 +32,9 @@ def AES_decode(data):
 
 
 def process_time_info(time_info):
-    total_time, total_place = [ 0 ] * 91, [ 0 ] * 3
+    total_time, total_place = [ 0 ] * 85, [ 0 ] * 3
     if time_info == "" or time_info == "◎密集課程":
-        total_time[90] = 1
+        total_time[84] = 1
         total_place[2] = 1
     else:
         for ti in time_info.split(','):
@@ -43,13 +43,13 @@ def process_time_info(time_info):
             session = ti[1]
             if '-' not in session:
                 if session in session_dict: session = session_dict[session]
-                total_time[weekday*15+int(session)] = 1
+                total_time[weekday*14+int(session)-1] = 1
             else:
                 s_start, s_end = session.split('-')
                 if s_start in session_dict: s_start = session_dict[s_start]
                 if s_end   in session_dict: s_end   = session_dict[s_end]
                 for s in range(int(s_start), int(s_end)+1):
-                    total_time[weekday*15+s] = 1
+                    total_time[weekday*14+s-1] = 1
             place = ti[2]
             if place in place_array: place = place_array.index(place)
             else                   : place = 2

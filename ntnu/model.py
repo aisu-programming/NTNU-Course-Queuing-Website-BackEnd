@@ -32,33 +32,30 @@ class User():
         self.user = UserObject.query.filter_by(student_id=self.student_id).first()
         if self.user is None:
             # User not exist (first time login) --> Register
-            # Login failure --> Raise PasswordWrongException
+            # If login failure --> Raise PasswordWrongException
             self.__register()
         else:
-            # User exists
-            if self.user.original_password == self.password:
-                # Password same --> Get orders
-                self.orders = OrderObject.query.filter_by(user_id=self.user.id).all()
-            else:
+            # User exists but password incorrect
+            if self.user.original_password != self.password:
                 # Update password if it was changed by user via NTNU website
-                # Login failure --> Return PasswordWrongException
+                # If login failure --> Raise PasswordWrongException
                 self.__update_password()
         return
 
     def __register(self):
-        name, major = self.set_cookie()
+        name, major = self.__set_cookie()
         major = department_text2code[major]
         self.user = UserObject(self.student_id, self.password, name, major)
         self.user.register()
         return
 
     def __update_password(self):
-        self.set_cookie()
+        self.__set_cookie()
         self.user.update_password(self.password)
         return
 
     # Log into 選課系統 with selenium, get the cookie, and set to session
-    def set_cookie(self):
+    def __set_cookie(self):
         logging.info(f"User {self.student_id} is trying to login to NTNU website to set cookie.")
         cookie, name, major = login_course_taking_system(self.student_id, self.password)
         del cookie["httpOnly"]
@@ -68,9 +65,9 @@ class User():
         return name, major
 
     # Log into 校務行政系統 and get all courses the student has taken
-    def __get_course_history(self):
+    def get_course_history(self):
         history = login_iportal(self.student_id, self.password)
-        self.history = json.load(history)
+        self.history = history
         return
 
     @property
@@ -81,6 +78,15 @@ class User():
             "data"  : { "student_id": self.student_id }
         }
         return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
+
+    @property
+    def orders(self):
+        return OrderObject.query.filter_by(user_id=self.user.id).all()
+
+    def alter_order(self, course, action):
+        if course.id in [order.course_id for order in self.orders]:
+            pass
+        return
 
 
 class Agent(User):
@@ -118,7 +124,7 @@ class Agent(User):
     def take_course(self, serial_no, domain):
 
         if self.session.cookies.get("JESSIONID") is None:
-            self.set_cookie()
+            self.__set_cookie()
         if not self.add_course_page:
             self.switch_to_add_course_page()
 
@@ -188,7 +194,7 @@ class Agent(User):
 
     def get_all_ntnu_courses(self):
         if self.session.cookies.get("JESSIONID") is None:
-            self.set_cookie()
+            self.__set_cookie()
         if not self.add_course_page:
             self.switch_to_add_course_page()
         payload = "limit=999999&page=1&start=0"

@@ -18,14 +18,6 @@ auth_api = Blueprint("auth_api", __name__)
 
 ''' Functions '''
 def login_required(func):
-    '''
-    Check if the user is login
-    Returns:
-        - A wrapped function
-        - 403 Not logged in
-        - 403 Invalid token
-        - 403 Authorization expired
-    '''
     @wraps(func)
     @Request.cookies(vars_dict={"token": "jwt"})
     def wrapper(token, *args, **kwargs):
@@ -39,7 +31,6 @@ def login_required(func):
         user = User(student_id, password)
         kwargs["user"] = user
         return func(*args, **kwargs)
-
     return wrapper
 
 
@@ -56,11 +47,11 @@ def session():
             student_id = student_id.upper()
             user = User(student_id, password)
             cookies = { "jwt": user.jwt }
-            logging.warning(f"User '{student_id}' ({user.user.name}) has successfully logged in.")
+            logging.info(f"User '{student_id}' ({user.user.name}) has successfully logged in.")
             return HTTPResponse("Success.", cookies=cookies)
 
         except PasswordWrongException:
-            logging.error(f"PasswordWrongException: User '{student_id}'")
+            logging.warning(f"PasswordWrongException: User '{student_id}'")
             return HTTPError("Id or password incorrect.", 403)
 
         except Exception as ex:

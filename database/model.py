@@ -7,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column
 from sqlalchemy.dialects.mysql import \
     TINYINT, SMALLINT, CHAR, VARCHAR, \
-    FLOAT, BINARY, BIT, BOOLEAN, DATETIME
+    FLOAT, BINARY, BIT, DATETIME, ENUM
 
 from mapping import department_code2id
 from database.utils import AES_encode, AES_decode, process_time_info
@@ -59,7 +59,7 @@ class UserObject(db.Model):
 class CourseObject(db.Model):
     __tablename__ = 'courses'
     id           = Column(SMALLINT(unsigned=True), primary_key=True)
-    course_id    = Column(CHAR(4),      nullable=False, unique=True)
+    course_no    = Column(CHAR(4),      nullable=False, unique=True)
     course_code  = Column(CHAR(7),      nullable=False)
     chinese_name = Column(VARCHAR(80),  nullable=False)
     english_name = Column(VARCHAR(120), nullable=False)
@@ -70,19 +70,19 @@ class CourseObject(db.Model):
     department_2 = Column(BIT(64),      nullable=False)
     department_3 = Column(BIT(41),      nullable=False)
     time_info    = Column(VARCHAR(150), nullable=False)
-    # time: 91 bits
+    # time: 85 bits
     time_1       = Column(BIT(64),      nullable=False)
-    time_2       = Column(BIT(27),      nullable=False)
+    time_2       = Column(BIT(21),      nullable=False)
     # place: 3 bits (本部, 公館, 其他)
     place        = Column(BIT(3),       nullable=False)
     teacher      = Column(VARCHAR(30),  nullable=False)
 
     def __init__(
-        self, course_id, course_code, chinese_name, english_name,
+        self, course_no, course_code, chinese_name, english_name,
         credit, department, department_1, department_2, department_3,
         time_info, time_1, time_2, place, teacher
     ):
-        self.course_id    = course_id
+        self.course_no    = course_no
         self.course_code  = course_code
         self.chinese_name = chinese_name
         self.english_name = english_name
@@ -105,10 +105,9 @@ class CourseObject(db.Model):
     @property
     def json(self):
         return {
-            "courseId"   : self.course_id,
+            "courseNo"   : self.course_no,
             "courseCode" : self.course_code,
             "chineseName": self.chinese_name,
-            "englishName": self.english_name,
             "credit"     : self.credit,
             "department" : self.department,
             "timeInfo"   : self.time_info,
@@ -121,18 +120,42 @@ class OrderObject(db.Model):
     id               = Column(TINYINT(unsigned=True), primary_key=True)
     user_id          = Column(TINYINT(unsigned=True), db.ForeignKey('users.id'), nullable=False)
     course_id        = Column(SMALLINT(unsigned=True), db.ForeignKey('courses.id'), nullable=False)
-    finished         = Column(BOOLEAN, default=False)
-    register_time    = Column(DATETIME, default=datetime.now)
+    status           = Column(ENUM("activate", "pause", "success"), nullable=False)
+    # register_time    = Column(DATETIME, default=datetime.now)
     last_update_time = Column(DATETIME, onupdate=datetime.now, default=datetime.now)
 
-    def __init__(self, user_id, course_id):
+    def __init__(self, user_id, course_id, status):
         self.user_id   = user_id
         self.course_id = course_id
+        self.status    = status
 
     def register(self):
         db.session.add(self)
         db.session.commit()
         return
+
+    def update_status(self, status):
+        self.status = status
+        db.session.commit()
+        return
+
+    def cancel(self):
+        db.session.delete(self)
+        db.session.commit()
+        return
+
+    @property
+    def json(self):
+        course = CourseObject.query.filter_by(id=self.course_id).first()
+        return {
+            "courseNo"   : course.course_no,
+            "chineseName": course.chinese_name,
+            "credit"     : course.credit,
+            "department" : course.department,
+            "timeInfo"   : course.time_info,
+            "teacher"    : course.teacher,
+            "status"     : list(self.status)[0],
+        }
 
 
 def import_courses():
@@ -140,8 +163,8 @@ def import_courses():
     with open(f"{ROOT_PATH}/data/courses_2022-2.json", encoding="utf-8") as json_file:
         courses = json.load(json_file)["List"]
         
-    for ei, course in tqdm(enumerate(courses), desc="Importing course", ascii=True):
-        course_id    = course["serialNo"]
+    for course in tqdm(courses, desc="Importing course", ascii=True):
+        course_no    = course["serialNo"]
         course_code  = course["courseCode"]
         chinese_name = course["chnName"]
         english_name = course["engName"]
@@ -162,7 +185,11 @@ def import_courses():
         department_3 = int(''.join(str(s) for s in tmp[128:   ]), base=2)
         time_1, time_2, place = process_time_info(time_info)
         
-        course = CourseObject(course_id, course_code, chinese_name, english_name, credit, department, department_1, department_2, department_3, time_info, time_1, time_2, place, teacher)
+        course = CourseObject(
+            course_no, course_code, chinese_name, english_name, credit,
+            department, department_1, department_2, department_3,
+            time_info, time_1, time_2, place, teacher
+        )
         course.register()
         
     print('')
