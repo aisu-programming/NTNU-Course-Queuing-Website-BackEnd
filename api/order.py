@@ -103,9 +103,14 @@ def order(user):
                     order = orders[orders_course_ids.index(course.id)]
                     status_before = order.status
 
-                    # If status_before == status_target: no need to update
+                    # If status_before == status_target: no need to update status
                     if status_before == status_target:
-                        pass
+                        # If order.domain == domain_target: no need to update domain
+                        if order.domain == domain_target:
+                            pass
+                        else:
+                            flask_logger.info(f"User '{user.student_id}' ({user.user.name}) update order for course {change[COURSE_NO]} from domain '{order.domain}' to '{domain_target}'.")
+                            order.update_domain(domain_target)
                     
                     # Activate the order
                     elif status_target == ACTIVATE:
@@ -113,6 +118,7 @@ def order(user):
                         if activate_orders_counter < user.user.order_limit:
                             flask_logger.info(f"User '{user.student_id}' ({user.user.name}) update order for course {change[COURSE_NO]} from status '{PAUSE}' to '{ACTIVATE}'.")
                             order.update_status(status_target)
+                            # If order.domain == domain_target: no need to update domain
                             if order.domain == domain_target:
                                 pass
                             else:
@@ -128,6 +134,7 @@ def order(user):
                     elif status_target == PAUSE:
                         flask_logger.info(f"User '{user.student_id}' ({user.user.name}) update order for course {change[COURSE_NO]} from status '{ACTIVATE}' to '{PAUSE}'.")
                         order.update_status(status_target)
+                        # If order.domain == domain_target: no need to update domain
                         if order.domain == domain_target:
                             pass
                         else:
