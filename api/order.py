@@ -1,5 +1,6 @@
 ''' Libraries '''
 import logging
+flask_logger = logging.getLogger(name="flask")
 from flask import Blueprint, request
 
 from exceptions import *
@@ -28,7 +29,7 @@ def order(user):
             orders = [ order.json for order in user.orders ]
             return HTTPResponse("Success.", data={"orders": orders})
         except Exception as ex:
-            logging.error(f"Unknown exception: {str(ex)}")
+            flask_logger.error(f"Unknown exception: {str(ex)}")
             return HTTPError(str(ex), 404)
 
     @Request.json("changes: list")
@@ -86,23 +87,23 @@ def order(user):
                     elif status_target == ACTIVATE:
                         # Hasn't exceed the limitation: permit
                         if activate_orders_counter < user.user.order_limit:
-                            logging.info(f"User '{user.student_id}' ({user.user.name}) update order for course {change[course_no]} from status '{PAUSE}' to '{ACTIVATE}'.")
+                            flask_logger.info(f"User '{user.student_id}' ({user.user.name}) update order for course {change[course_no]} from status '{PAUSE}' to '{ACTIVATE}'.")
                             order.update_status(status_target)
                             activate_orders_counter += 1
                         # Already meet the limitation: refuse to activate the order
                         else:
-                            logging.info(f"User '{user.student_id}' ({user.user.name}) update order for course {change[course_no]} from status '{PAUSE}' to '{ACTIVATE}' but exceeded the limitation of orders.")
+                            flask_logger.info(f"User '{user.student_id}' ({user.user.name}) update order for course {change[course_no]} from status '{PAUSE}' to '{ACTIVATE}' but exceeded the limitation of orders.")
                             exceed_changes.append(change)
 
                     # Pause the order
                     elif status_target == PAUSE:
-                        logging.info(f"User '{user.student_id}' ({user.user.name}) update order for course {change[course_no]} from status '{ACTIVATE}' to '{PAUSE}'.")
+                        flask_logger.info(f"User '{user.student_id}' ({user.user.name}) update order for course {change[course_no]} from status '{ACTIVATE}' to '{PAUSE}'.")
                         order.update_status(status_target)
                         activate_orders_counter -= 1
 
                     # Delete the order
                     else:
-                        logging.info(f"User '{user.student_id}' ({user.user.name}) deleted order for course {change[course_no]} (status: '{status_before}').")
+                        flask_logger.info(f"User '{user.student_id}' ({user.user.name}) deleted order for course {change[course_no]} (status: '{status_before}').")
                         order.cancel()
                         if status_before == ACTIVATE:
                             activate_orders_counter -= 1
@@ -114,28 +115,28 @@ def order(user):
                     if status_target == ACTIVATE:
                         # Hasn't exceed the limitation: permit
                         if activate_orders_counter < user.user.order_limit:
-                            logging.info(f"User '{user.student_id}' ({user.user.name}) ordered course {change[course_no]} with status '{ACTIVATE}'.")
+                            flask_logger.info(f"User '{user.student_id}' ({user.user.name}) ordered course {change[course_no]} with status '{ACTIVATE}'.")
                             OrderObject(user.user.id, course.id, ACTIVATE).register()
                             activate_orders_counter += 1
                         # Already meet the limitation: refuse to activate the order
                         else:
-                            logging.info(f"User '{user.student_id}' ({user.user.name}) ordered course {change[course_no]} with status '{ACTIVATE}' but exceeded the limitation of orders.")
+                            flask_logger.info(f"User '{user.student_id}' ({user.user.name}) ordered course {change[course_no]} with status '{ACTIVATE}' but exceeded the limitation of orders.")
                             exceed_changes.append(change)
                             
                     # create new OrderObject with status: PAUSE
                     elif status_target == PAUSE:
-                        logging.info(f"User '{user.student_id}' ({user.user.name}) ordered course {change[course_no]} with status '{PAUSE}'.")
+                        flask_logger.info(f"User '{user.student_id}' ({user.user.name}) ordered course {change[course_no]} with status '{PAUSE}'.")
                         OrderObject(user.user.id, course.id, PAUSE).register()
 
             orders = [ order.json for order in user.orders ]
             return HTTPResponse("Success.", data={"orders": orders, "exceedChanges": exceed_changes})
 
         except DataIncorrectException as ex:
-            logging.warning(f"DataIncorrectException: {str(ex)}")
+            flask_logger.warning(f"DataIncorrectException: {str(ex)}")
             return HTTPError(str(ex), 403)
 
         except Exception as ex:
-            logging.error(f"Unknown exception: {str(ex)}")
+            flask_logger.error(f"Unknown exception: {str(ex)}")
             return HTTPError(str(ex), 404)
 
     methods = { "GET": get_orders, "PATCH": update_orders }
@@ -151,5 +152,5 @@ def get_latest_success_orders():
         return HTTPResponse("Success.", data={"orders": orders})
 
     except Exception as ex:
-        logging.error(f"Unknown exception: {str(ex)}")
+        flask_logger.error(f"Unknown exception: {str(ex)}")
         return HTTPError(str(ex), 404)
