@@ -2,14 +2,15 @@
 import os
 import json
 from tqdm import tqdm
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column
 from sqlalchemy.dialects.mysql import \
     TINYINT, SMALLINT, CHAR, VARCHAR, \
-    FLOAT, BINARY, BIT, DATETIME, ENUM
+    FLOAT, BINARY, BIT, DATETIME, ENUM, JSON
 
 from mapping import department_code2id
+from exceptions import BannedException
 from database.utils import AES_encode, AES_decode, process_time_info
 
 
@@ -18,17 +19,58 @@ from database.utils import AES_encode, AES_decode, process_time_info
 db = SQLAlchemy()
 
 
+class Connection(db.Model):
+    __tablename__ = 'connections'
+    id          = Column(TINYINT(unsigned=True), primary_key=True)
+    target      = Column(VARCHAR(39), nullable=False, unique=True)  # Length of IPv6 = 39
+    target_type = Column(ENUM("IP", "student_id"), nullable=False)
+    banned_turn = Column(TINYINT, default=0)
+    accept_time = Column(DATETIME)
+    records     = Column(JSON)
+
+    def __init__(self, target, target_type):
+        self.target      = target
+        self.target_type = target_type
+        self.records     = [ datetime.now().timestamp() ]
+
+    def register(self):
+        db.session.add(self)
+        db.session.commit()
+        return
+
+    def access(self):
+        last_second = datetime.now() - timedelta(seconds=1)
+        self.records = list(filter(lambda d: d >= last_second.timestamp(), self.records))
+        self.records.append(datetime.now().timestamp())
+        db.session.commit()
+        return
+
+    def ban(self):
+        self.records = []
+        self.banned_turn += 1
+        self.accept_time = datetime.now() + timedelta(minutes=1)
+        db.session.commit()
+        return
+
+    def unban(self):
+        self.records.append(datetime.now().timestamp())
+        self.accept_time = None
+        db.session.commit()
+        return
+
+
 class UserObject(db.Model):
     __tablename__ = 'users'
-    id         = Column(TINYINT(unsigned=True), primary_key=True)
-    student_id = Column(CHAR(9),     nullable=False, unique=True)
-    password   = Column(BINARY(48),  nullable=False)
-    name       = Column(VARCHAR(10), nullable=False)
-    # grade      = Column(TINYINT(unsigned=True))
-    major      = Column(VARCHAR(4),  nullable=False)
-    level      = Column(TINYINT,     default=1)
-    major_2    = Column(VARCHAR(4))
-    minor      = Column(VARCHAR(4))
+    id          = Column(TINYINT(unsigned=True), primary_key=True)
+    student_id  = Column(CHAR(9),     nullable=False, unique=True)
+    password    = Column(BINARY(48),  nullable=False)
+    name        = Column(VARCHAR(10), nullable=False)
+    # grade       = Column(TINYINT(unsigned=True))
+    major       = Column(VARCHAR(4),  nullable=False)
+    level       = Column(TINYINT,     default=1)
+    order_limit = Column(TINYINT,     default=10)  # Activate orders limitation
+    major_2     = Column(VARCHAR(4))
+    minor       = Column(VARCHAR(4))
 
     def __init__(self, student_id, password, name,
                  major, level=None, major_2=None, minor=None):
@@ -40,11 +82,6 @@ class UserObject(db.Model):
         self.major_2    = major_2
         self.minor      = minor
 
-    @property
-    def original_password(self):
-        password = AES_decode(self.password)
-        return password
-
     def register(self):
         db.session.add(self)
         db.session.commit()
@@ -54,6 +91,11 @@ class UserObject(db.Model):
         self.password = AES_encode(password)
         db.session.commit()
         return
+
+    @property
+    def original_password(self):
+        password = AES_decode(self.password)
+        return password
 
 
 class CourseObject(db.Model):
@@ -120,7 +162,7 @@ class OrderObject(db.Model):
     id               = Column(TINYINT(unsigned=True), primary_key=True)
     user_id          = Column(TINYINT(unsigned=True), db.ForeignKey('users.id'), nullable=False)
     course_id        = Column(SMALLINT(unsigned=True), db.ForeignKey('courses.id'), nullable=False)
-    status           = Column(ENUM("activate", "pause", "success"), nullable=False)
+    status           = Column(ENUM("activate", "pause", "successful"), nullable=False)
     # register_time    = Column(DATETIME, default=datetime.now)
     last_update_time = Column(DATETIME, onupdate=datetime.now, default=datetime.now)
 
@@ -155,6 +197,18 @@ class OrderObject(db.Model):
             "timeInfo"   : course.time_info,
             "teacher"    : course.teacher,
             "status"     : list(self.status)[0],
+        }
+
+    # For latest successful orders in index page
+    @property
+    def json_with_user_info(self):
+        user   = UserObject.query.filter_by(id=self.user_id).first()
+        course = CourseObject.query.filter_by(id=self.course_id).first()
+        return {
+            "student_id" : user.student_id,
+            "courseNo"   : course.course_no,
+            "chineseName": course.chinese_name,
+            "succeedTime": self.last_update_time,
         }
 
 

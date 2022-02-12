@@ -6,10 +6,10 @@ from bitstring import BitArray
 from sqlalchemy import or_, and_
 
 from exceptions import *
-# from api.auth import login_required
 from api.utils.request import Request
 from api.utils.response import *
-from database.model import CourseObject  #, OrderObject
+from api.utils.rate_limit import rate_limit
+from database.model import CourseObject
 
 
 
@@ -23,7 +23,8 @@ course_api = Blueprint("course_api", __name__)
 @course_api.route("/search", methods=["POST"])
 @Request.json("course_no: str", "course_name: str", "department: str",
               "teacher: str", "time: str", "place: int", "precise: bool")
-def search_course(course_no, course_name, department, teacher, time, place, precise):
+@rate_limit(ip_based=True, limit=20)
+def search_courses(course_no, course_name, department, teacher, time, place, precise):
     try:
         # id
         if course_no != "" and len(course_no) != 4:
@@ -49,7 +50,6 @@ def search_course(course_no, course_name, department, teacher, time, place, prec
             raise DataIncorrectException("time form incorrect.")
         time_1 = int(time[:64], base=2)
         time_2 = int(time[64:], base=2)
-        print(time_1, time_2)
 
         if course_no != "":
             courses = CourseObject.query.filter_by(course_no=course_no)
@@ -79,7 +79,6 @@ def search_course(course_no, course_name, department, teacher, time, place, prec
                 ))
             if place != 0:
                 courses = courses.filter(CourseObject.place.op('&')(place))
-            print(courses.statement)
             
         if courses != []: courses = courses.all()
         courses = sorted([ c.json for c in courses ], key=lambda c: c["courseNo"])
@@ -92,29 +91,3 @@ def search_course(course_no, course_name, department, teacher, time, place, prec
     except Exception as ex:
         logging.error(f"Unknown exception: {str(ex)}")
         return HTTPError(str(ex), 404)
-
-
-# @course_api.route("/order", methods=["POST"])
-# @login_required
-# @Request.json("course_no: str")
-# def order(user, course_no):
-#     try:
-#         if len(course_no) != 4:
-#             raise DataIncorrectException("courseNo form incorrect.")
-#         course = CourseObject.query.filter_by(course_no=course_no).first()
-#         if course is None:
-#             raise DataIncorrectException("courseNo not exist.")
-#         else:
-#             course = course[0]
-#
-#         OrderObject(user.user.id, course.id).register()
-#         logging.info(f"User '{user.student_id}' ordered for course {course_no}.")
-#         return HTTPResponse("Success.")
-#
-#     except DataIncorrectException as ex:
-#         logging.warning(f"DataIncorrectException: {str(ex)}")
-#         return HTTPError(str(ex), 403)
-#
-#     except Exception as ex:
-#         logging.error(f"Unknown exception: {str(ex)}")
-#         return HTTPError(str(ex), 404)

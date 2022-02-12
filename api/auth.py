@@ -7,7 +7,9 @@ from exceptions import *
 from api.utils.request import Request
 from api.utils.response import *
 from api.utils.jwt import jwt_decode
+from api.utils.rate_limit import rate_limit
 from ntnu.model import User, UserObject
+
 
 
 ''' Settings '''
@@ -17,8 +19,8 @@ auth_api = Blueprint("auth_api", __name__)
 
 
 ''' Functions '''
-def login_required(func):
-    @wraps(func)
+def login_required(function):
+    @wraps(function)
     @Request.cookies(vars_dict={"token": "jwt"})
     def wrapper(token, *args, **kwargs):
         if token is None:
@@ -30,11 +32,12 @@ def login_required(func):
         password   = UserObject.query.filter_by(student_id=student_id).first().original_password
         user = User(student_id, password)
         kwargs["user"] = user
-        return func(*args, **kwargs)
+        return function(*args, **kwargs)
     return wrapper
 
 
 @auth_api.route("/session", methods=["GET", "POST"])
+@rate_limit(ip_based=True, limit=20)
 def session():
 
     def logout():

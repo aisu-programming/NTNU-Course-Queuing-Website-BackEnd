@@ -2,7 +2,6 @@
 import os
 import jwt
 import time
-import json
 import logging
 import requests
 from datetime import datetime, timedelta
@@ -83,10 +82,9 @@ class User():
     def orders(self):
         return OrderObject.query.filter_by(user_id=self.user.id).all()
 
-    def alter_order(self, course, action):
-        if course.id in [order.course_id for order in self.orders]:
-            pass
-        return
+    @property
+    def unfinished_orders(self):
+        return OrderObject.query.filter_by(user_id=self.user.id).filter(OrderObject.status!="successful").all()
 
 
 class Agent(User):
