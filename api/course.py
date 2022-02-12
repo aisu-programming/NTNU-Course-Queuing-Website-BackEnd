@@ -1,11 +1,13 @@
 ''' Libraries '''
 import base64
 import logging
+flask_logger = logging.getLogger(name="flask")
 from flask import Blueprint
 from bitstring import BitArray
 from sqlalchemy import or_, and_
 
 from exceptions import *
+from api.auth import login_detect
 from api.utils.request import Request
 from api.utils.response import *
 from api.utils.rate_limit import rate_limit
@@ -23,8 +25,10 @@ course_api = Blueprint("course_api", __name__)
 @course_api.route("/search", methods=["POST"])
 @Request.json("course_no: str", "course_name: str", "department: str",
               "teacher: str", "time: str", "place: int", "precise: bool")
+@login_detect
 @rate_limit(ip_based=True, limit=20)
-def search_courses(course_no, course_name, department, teacher, time, place, precise):
+def search_courses(course_no, course_name, department,
+                   teacher, time, place, precise, **kwargs):
     try:
         # id
         if course_no != "" and len(course_no) != 4:
@@ -82,12 +86,24 @@ def search_courses(course_no, course_name, department, teacher, time, place, pre
             
         if courses != []: courses = courses.all()
         courses = sorted([ c.json for c in courses ], key=lambda c: c["courseNo"])
+        for ci in range(len(courses)):
+            courses[ci]["isOrdered"] = False
+
+        user = kwargs.get("user")
+        if user is not None:
+            ordered_courses_ids = [ order.course_id for order in user.unfinished_orders ]
+            ordered_courses     = CourseObject.query.filter(CourseObject.id.in_(ordered_courses_ids)).all()
+            ordered_courses_nos = [ course.course_no for course in ordered_courses ]
+            for ci in range(len(courses)):
+                if courses[ci]["courseNo"] in ordered_courses_nos:
+                    courses[ci]["isOrdered"] = True
+
         return HTTPResponse("Success.", data={"amount": len(courses), "courses": courses})
 
     except DataIncorrectException as ex:
-        logging.warning(f"DataIncorrectException: {str(ex)}")
+        flask_logger.warning(f"DataIncorrectException: {str(ex)}")
         return HTTPError(str(ex), 403)
 
     except Exception as ex:
-        logging.error(f"Unknown exception: {str(ex)}")
+        flask_logger.error(f"Unknown exception: {str(ex)}")
         return HTTPError(str(ex), 404)
