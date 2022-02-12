@@ -1,5 +1,6 @@
 ''' Libraries '''
 import logging
+flask_logger = logging.getLogger(name="flask")
 from functools import wraps
 from flask import Blueprint, request
 
@@ -13,12 +14,28 @@ from ntnu.model import User, UserObject
 
 
 ''' Settings '''
-__all__ = ["login_required", "auth_api"]
+__all__ = ["login_detect", "login_required", "auth_api"]
 auth_api = Blueprint("auth_api", __name__)
 
 
 
 ''' Functions '''
+def login_detect(function):
+    @wraps(function)
+    @Request.cookies(vars_dict={"token": "jwt"})
+    def wrapper(token, *args, **kwargs):
+        if token is not None:
+            json = jwt_decode(token)
+            if json is None:
+                return HTTPError("JWT token invalid.", 403)
+            student_id = json["data"]["student_id"]
+            password   = UserObject.query.filter_by(student_id=student_id).first().original_password
+            user = User(student_id, password)
+            kwargs["user"] = user
+        return function(*args, **kwargs)
+    return wrapper
+
+
 def login_required(function):
     @wraps(function)
     @Request.cookies(vars_dict={"token": "jwt"})
@@ -50,15 +67,15 @@ def session():
             student_id = student_id.upper()
             user = User(student_id, password)
             cookies = { "jwt": user.jwt }
-            logging.info(f"User '{student_id}' ({user.user.name}) has successfully logged in.")
+            flask_logger.info(f"User '{student_id}' ({user.user.name}) has successfully logged in.")
             return HTTPResponse("Success.", cookies=cookies)
 
         except PasswordWrongException:
-            logging.warning(f"PasswordWrongException: User '{student_id}'")
+            flask_logger.warning(f"PasswordWrongException: User '{student_id}'")
             return HTTPError("Id or password incorrect.", 403)
 
         except Exception as ex:
-            logging.error(f"Unknown exception: {str(ex)}")
+            flask_logger.error(f"Unknown exception: {str(ex)}")
             return HTTPError(str(ex), 404)
 
     methods = { "GET": logout, "POST": login }
