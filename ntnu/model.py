@@ -2,7 +2,6 @@
 import os
 import jwt
 import time
-import logging
 import requests
 from datetime import datetime, timedelta
 
@@ -55,7 +54,6 @@ class User():
 
     # Log into 選課系統 with selenium, get the cookie, and set to session
     def __set_cookie(self):
-        logging.info(f"User {self.student_id} is trying to login to NTNU website to set cookie.")
         cookie, name, major = login_course_taking_system(self.student_id, self.password)
         del cookie["httpOnly"]
         self.session.cookies.set(**cookie)
@@ -111,30 +109,27 @@ class Agent(User):
         return r
 
     # 切換到「加選」頁面
-    def switch_to_add_course_page(self):
-        logging.info(f"User {self.student_id} is switching to add course page.")
+    def __switch_to_add_course_page(self):
         r = self.__get(NTNU_COURSE_QUERY_URL, params={"action": "add"})
         # print("切換到「加選」頁面: " + str(r) + " - " + r.text)
         self.add_course_page = True
         return r
 
     # 加選課程
-    def take_course(self, serial_no, domain):
+    def take_course(self, course_no, domain=''):
 
         if self.session.cookies.get("JESSIONID") is None:
             self.__set_cookie()
         if not self.add_course_page:
-            self.switch_to_add_course_page()
-
-        logging.info(f"User {self.student_id} is trying to take the course No.{serial_no}.")
+            self.__switch_to_add_course_page()
 
         if not self.add_course_page:
-            self.switch_to_add_course_page()
+            self.__switch_to_add_course_page()
 
         # 加選課程前置步驟 1/2
         r = self.__post(NTNU_ENROLL_URL, data={
             "action": "checkCourseTime",
-            "serial_no": serial_no,
+            "serial_no": course_no,
             "direct": "1"
         })
         # print("加選課程前置步驟 1/2: " + str(r) + " - " + r.text)
@@ -142,7 +137,7 @@ class Agent(User):
         # 加選課程前置步驟 2/2
         r = self.__post(NTNU_ENROLL_URL, data={
             "action": "checkDomain",
-            "serial_no": serial_no,
+            "serial_no": course_no,
             "direct": "1"
         })
         # print("加選課程前置步驟 2/2: " + str(r) + " - " + r.text)
@@ -169,7 +164,7 @@ class Agent(User):
                 extra_headers=extra_headers,
                 params={
                     "action": "add",
-                    "serial_no": serial_no,
+                    "serial_no": course_no,
                     "direct": "1"
                 })
             # print("如果課程非通識: " + str(r) + " - " + r.text)
@@ -180,21 +175,20 @@ class Agent(User):
                 extra_headers=extra_headers,
                 data={
                     "action": "add",
-                    "serial_no": serial_no,
+                    "serial_no": course_no,
                     "direct": "1",
                     "guDomain": domain
                 })
             # print("如果課程非通識: " + str(r) + " - " + r.text)
 
         # 輸出網頁回傳結果內容
-        # if r.ok: logging.info("")
         return r
 
     def get_all_ntnu_courses(self):
         if self.session.cookies.get("JESSIONID") is None:
             self.__set_cookie()
         if not self.add_course_page:
-            self.switch_to_add_course_page()
+            self.__switch_to_add_course_page()
         payload = "limit=999999&page=1&start=0"
         for i in range(3):
             print(f"Send {i+1} time")

@@ -9,8 +9,7 @@ from sqlalchemy.dialects.mysql import \
     TINYINT, SMALLINT, CHAR, VARCHAR, \
     FLOAT, BINARY, BIT, DATETIME, ENUM, JSON
 
-from mapping import department_code2id
-from exceptions import BannedException
+from mapping import department_code2id, domain_text
 from database.utils import AES_encode, AES_decode, process_time_info
 
 
@@ -118,11 +117,13 @@ class CourseObject(db.Model):
     # place: 3 bits (本部, 公館, 其他)
     place        = Column(BIT(3),       nullable=False)
     teacher      = Column(VARCHAR(30),  nullable=False)
+    # domains: 7 bits ("00UG", "01UG", "02UG", "03UG", "04UG", "05UG", "06UG")
+    domains      = Column(BIT(7),       nullable=False)
 
     def __init__(
         self, course_no, course_code, chinese_name, english_name,
         credit, department, department_1, department_2, department_3,
-        time_info, time_1, time_2, place, teacher
+        time_info, time_1, time_2, place, teacher, domains
     ):
         self.course_no    = course_no
         self.course_code  = course_code
@@ -138,6 +139,7 @@ class CourseObject(db.Model):
         self.time_2       = time_2
         self.place        = place
         self.teacher      = teacher
+        self.domains      = domains
 
     def register(self):
         db.session.add(self)
@@ -154,6 +156,7 @@ class CourseObject(db.Model):
             "department" : self.department,
             "timeInfo"   : self.time_info,
             "teacher"    : self.teacher,
+            "domains"    : self.domains,
         }
 
 
@@ -163,13 +166,16 @@ class OrderObject(db.Model):
     user_id          = Column(TINYINT(unsigned=True), db.ForeignKey('users.id'), nullable=False)
     course_id        = Column(SMALLINT(unsigned=True), db.ForeignKey('courses.id'), nullable=False)
     status           = Column(ENUM("activate", "pause", "successful"), nullable=False)
-    # register_time    = Column(DATETIME, default=datetime.now)
+    domain           = Column(ENUM('', "00UG", "01UG", "02UG", "03UG", "04UG",
+                                   "05UG", "06UG", "07UG", "08UG", "09UG"), default='')
+    activate_time    = Column(DATETIME)
     last_update_time = Column(DATETIME, onupdate=datetime.now, default=datetime.now)
 
-    def __init__(self, user_id, course_id, status):
+    def __init__(self, user_id, course_id, status, domain=''):
         self.user_id   = user_id
         self.course_id = course_id
         self.status    = status
+        self.domain    = domain
 
     def register(self):
         db.session.add(self)
@@ -178,6 +184,13 @@ class OrderObject(db.Model):
 
     def update_status(self, status):
         self.status = status
+        if status == "activate":
+            self.activate_time = datetime.now()
+        db.session.commit()
+        return
+
+    def update_domain(self, domain):
+        self.domain = domain
         db.session.commit()
         return
 
@@ -196,7 +209,8 @@ class OrderObject(db.Model):
             "department" : course.department,
             "timeInfo"   : course.time_info,
             "teacher"    : course.teacher,
-            "status"     : list(self.status)[0],
+            "status"     : self.status,
+            "domain"     : self.domain,
         }
 
     # For latest successful orders in index page
@@ -223,28 +237,32 @@ def import_courses():
         chinese_name = course["chnName"]
         english_name = course["engName"]
         credit       = course["credit"]
-        department   = course["deptCode"]
+        dept_code    = course["deptCode"]
         time_info    = course["timeInfo"]
         teacher      = course["teacher"]
+        v_chn_name   = course["v_chn_name"]
         # eng_teaching    = course["engTeach"]
         # limit_count     = course["limitCountH"]
         # authorize_count = course["authorizeP"]
         # option_code     = course["optionCode"]  # 必修, 選修, 通識
 
         credit = float(credit)
-        tmp = [0] * 169
-        tmp[department_code2id[department]] = 1
-        department_1 = int(''.join(str(s) for s in tmp[   : 64]), base=2)
-        department_2 = int(''.join(str(s) for s in tmp[ 64:128]), base=2)
-        department_3 = int(''.join(str(s) for s in tmp[128:   ]), base=2)
+        department = [0] * 169
+        department[department_code2id[dept_code]] = 1
+        department_1 = int(''.join(str(s) for s in department[   : 64]), base=2)
+        department_2 = int(''.join(str(s) for s in department[ 64:128]), base=2)
+        department_3 = int(''.join(str(s) for s in department[128:   ]), base=2)
         time_1, time_2, place = process_time_info(time_info)
+        domains = [0] * 7
+        for dti, dt in enumerate(domain_text):
+            if dt in v_chn_name: domains[dti] = 1
+        domains = int(''.join(str(d) for d in domains), base=2)
         
-        course = CourseObject(
+        CourseObject(
             course_no, course_code, chinese_name, english_name, credit,
-            department, department_1, department_2, department_3,
-            time_info, time_1, time_2, place, teacher
-        )
-        course.register()
+            dept_code, department_1, department_2, department_3,
+            time_info, time_1, time_2, place, teacher, domains
+        ).register()
         
     print('')
     return
