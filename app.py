@@ -17,6 +17,9 @@ from api.auth import auth_api
 from api.order import order_api
 from api.course import course_api
 from database.model import db, CourseObject, import_courses
+# Robot
+import threading
+from ntnu.robot import main_controller
 
 
 
@@ -48,21 +51,22 @@ with app.app_context():
 
 
 ''' Functions '''
+def activate_robot():
+    with app.app_context():
+        main_controller()
+# threading.Thread(target=activate_robot, name="Main Controller", daemon=True).start()
+
+
 @app.route("/")
 def hello_world():
     return f"<p>Hello world!</p>"
 
 
 # @app.before_first_request
-# def activate_ntnu_course_taking():
-#     pass
-
-
-@app.before_first_request
-def test():
-    from test import main
-    main()
-    return
+# def test():
+#     from test import main
+#     main()
+#     return
 
 
 

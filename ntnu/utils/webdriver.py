@@ -1,8 +1,10 @@
 ''' Libraries '''
 import io
-import json
 import os
+import json
 import time
+import logging
+my_selenium_logger = logging.getLogger(name="selenium-wire")
 # import winsound
 # import requests
 # import datetime
@@ -14,7 +16,6 @@ from validation.model import model
 
 
 ''' Settings '''
-# from app import dl_model
 dl_model = model
 # dl_model = None
 
@@ -85,7 +86,7 @@ def click_and_wait(element):
             return
         except:
             time.sleep(0.2)
-    raise BrowserStuckException
+    raise SeleniumStuckException
 
 
 # def wait_for_url(driver, url_content):
@@ -102,7 +103,7 @@ def wait_and_find_element_by_id(driver, id):
             return element
         except:
             time.sleep(0.2)
-    raise BrowserStuckException
+    raise SeleniumStuckException
 
 
 def wait_and_find_element_by_name(driver, name):
@@ -112,7 +113,7 @@ def wait_and_find_element_by_name(driver, name):
             return element
         except:
             time.sleep(0.2)
-    raise BrowserStuckException
+    raise SeleniumStuckException
 
 
 def wait_and_find_elements_by_name(driver, name):
@@ -122,7 +123,7 @@ def wait_and_find_elements_by_name(driver, name):
             return elements
         except:
             time.sleep(0.2)
-    raise BrowserStuckException
+    raise SeleniumStuckException
 
 
 def wait_and_find_element_by_class(driver, class_):
@@ -132,12 +133,12 @@ def wait_and_find_element_by_class(driver, class_):
             return element
         except:
             time.sleep(0.2)
-    raise BrowserStuckException
+    raise SeleniumStuckException
     
 
 def wait_for_button_appear(driver):
     message = ''
-    for _ in range(50):
+    for _ in range(100):
         try:
             driver.find_element_by_id("button-1017-btnEl")  # 「下一頁」按鈕
             return True
@@ -149,8 +150,12 @@ def wait_for_button_appear(driver):
             break
         except:
             time.sleep(0.2)
-    if message == "驗證碼錯誤": return False
-    else                     : raise PasswordWrongException
+    if "學號" in message:
+        raise UserIdNotExistException
+    elif "密碼" in message:
+        raise PasswordWrongException
+    else:
+        return False
 
 
 # def wait_element_text_by_id(driver, id, texts):
@@ -211,12 +216,12 @@ def process_validate_code(validate_code):
 
 def login_course_taking_system(student_id, password):
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
+    # options.add_argument("--headless")
     driver = webdriver.Chrome(WEBDRIVER_PATH, options=options)
     driver.get(NTNU_LOGIN_CHECK_URL)
 
     # 驗證碼: 正確 或 錯誤
-    while True:
+    for try_turn in range(5):
         
         # 驗證碼破圖
         validate_code_img_broken_time = 0
@@ -243,6 +248,13 @@ def login_course_taking_system(student_id, password):
         except PasswordWrongException:
             driver.quit()
             raise PasswordWrongException
+        except UserIdNotExistException:
+            driver.quit()
+            raise UserIdNotExistException
+        if try_turn == 4:
+            driver.quit()
+            my_selenium_logger.critical("Continuous 5 times failure of validation code! Abnormal!")
+            raise Exception("Continuous 5 times failure of validation code! Abnormal!")
 
         click_and_wait(wait_and_find_element_by_id(driver, "button-1005-btnEl"))  # 「OK」按鈕
         time.sleep(3)
