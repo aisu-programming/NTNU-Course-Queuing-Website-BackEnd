@@ -3,6 +3,7 @@ import logging
 from operator import index
 flask_logger = logging.getLogger(name="flask")
 from flask import Blueprint, request
+from flask_cors import cross_origin
 
 from exceptions import *
 from api.auth import login_required
@@ -47,6 +48,7 @@ def is_domain_invalid(course, domain_target):
 
 
 @order_api.route("/", methods=["GET", "PATCH"])
+@cross_origin(supports_credentials=True)
 @login_required
 @rate_limit
 def order(user):
@@ -185,6 +187,7 @@ def order(user):
 
 
 @order_api.route("/achievement", methods=["GET"])
+@cross_origin(supports_credentials=True)
 @rate_limit(ip_based=True, limit=20)
 def get_latest_success_orders():
     try:
