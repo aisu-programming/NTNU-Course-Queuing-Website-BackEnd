@@ -17,11 +17,12 @@ DB_NAME     = os.environ.get("DB_NAME")
 ''' Script '''
 DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
 engine = create_engine(DATABASE_URI, convert_unicode=True)
-db_session = scoped_session(sessionmaker(autocommit=False,
-                                         autoflush=False,
-                                         bind=engine))
+scoped_session_object = scoped_session(sessionmaker(autocommit=False,
+                                                    autoflush=False,
+                                                    bind=engine))
 Base = declarative_base()
-Base.query = db_session.query_property()
+Base.query = scoped_session_object.query_property()
+db_session = scoped_session_object()
 
 
 

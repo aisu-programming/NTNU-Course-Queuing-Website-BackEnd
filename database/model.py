@@ -11,7 +11,7 @@ from sqlalchemy.dialects.mysql import \
 
 from mapping import department_code2id, domain_text
 from database.utils import AES_encode, AES_decode, process_time_info
-from database.engine import Base, db_session
+from database.engine import Base, scoped_session_object
 
 
 
@@ -34,9 +34,9 @@ class Connection(Base):
 
     def register(self):
         # db.session.add(self)
-        db_session.add(self)
+        scoped_session_object.add(self)
         # db.session.commit()
-        db_session.commit()
+        scoped_session_object.commit()
         return
 
     def access(self):
@@ -44,7 +44,7 @@ class Connection(Base):
         self.records = list(filter(lambda d: d >= last_second.timestamp(), self.records))
         self.records.append(datetime.now().timestamp())
         # db.session.commit()
-        db_session.commit()
+        scoped_session_object.commit()
         return
 
     def ban(self):
@@ -52,14 +52,14 @@ class Connection(Base):
         self.banned_turn += 1
         self.accept_time = datetime.now() + timedelta(minutes=1)
         # db.session.commit()
-        db_session.commit()
+        scoped_session_object.commit()
         return
 
     def unban(self):
         self.records.append(datetime.now().timestamp())
         self.accept_time = None
         # db.session.commit()
-        db_session.commit()
+        scoped_session_object.commit()
         return
 
 
@@ -88,15 +88,15 @@ class UserObject(Base):
 
     def register(self):
         # db.session.add(self)
-        db_session.add(self)
+        scoped_session_object.add(self)
         # db.session.commit()
-        db_session.commit()
+        scoped_session_object.commit()
         return
 
     def update_password(self, password):
         self.password = AES_encode(password)
         # db.session.commit()
-        db_session.commit()
+        scoped_session_object.commit()
         return
 
     @property
@@ -151,9 +151,9 @@ class CourseObject(Base):
 
     def register(self):
         # db.session.add(self)
-        db_session.add(self)
+        scoped_session_object.add(self)
         # db.session.commit()
-        db_session.commit()
+        scoped_session_object.commit()
         return
 
     @property
@@ -191,9 +191,9 @@ class OrderObject(Base):
 
     def register(self):
         # db.session.add(self)
-        db_session.add(self)
+        scoped_session_object.add(self)
         # db.session.commit()
-        db_session.commit()
+        scoped_session_object.commit()
         return
 
     def update_status(self, status):
@@ -201,20 +201,20 @@ class OrderObject(Base):
         if status == "activate":
             self.activate_time = datetime.now()
         # db.session.commit()
-        db_session.commit()
+        scoped_session_object.commit()
         return
 
     def update_domain(self, domain):
         self.domain = domain
         # db.session.commit()
-        db_session.commit()
+        scoped_session_object.commit()
         return
 
     def cancel(self):
         # db.session.delete(self)
-        db_session.delete(self)
+        scoped_session_object.delete(self)
         # db.session.commit()
-        db_session.commit()
+        scoped_session_object.commit()
         return
 
     @property

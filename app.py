@@ -17,7 +17,7 @@ from api.auth import auth_api
 from api.order import order_api
 from api.course import course_api
 from database.model import CourseObject, import_courses
-from database.engine import db_session, init_db
+from database.engine import scoped_session_object, init_db
 # Robot
 import threading
 from ntnu.robot import main_controller
@@ -76,10 +76,10 @@ def hello_world():
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
-    db_session.remove()
+    scoped_session_object.remove()
     return
 
 
 
 ''' Run '''
-app.run(host="0.0.0.0")
+app.run(host="0.0.0.0", port=4999)
