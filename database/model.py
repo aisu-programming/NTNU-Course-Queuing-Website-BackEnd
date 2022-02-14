@@ -3,22 +3,22 @@ import os
 import json
 from tqdm import tqdm
 from datetime import datetime, timedelta
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Column
+# from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Column, ForeignKey
 from sqlalchemy.dialects.mysql import \
     TINYINT, SMALLINT, CHAR, VARCHAR, \
     FLOAT, BINARY, BIT, DATETIME, ENUM, JSON
 
 from mapping import department_code2id, domain_text
 from database.utils import AES_encode, AES_decode, process_time_info
+from database.engine import Base, db_session
 
 
 
 ''' Models '''
-db = SQLAlchemy()
+# db = SQLAlchemy()
 
-
-class Connection(db.Model):
+class Connection(Base):
     __tablename__ = 'connections'
     id          = Column(TINYINT(unsigned=True), primary_key=True)
     target      = Column(VARCHAR(39), nullable=False, unique=True)  # Length of IPv6 = 39
@@ -33,32 +33,37 @@ class Connection(db.Model):
         self.records     = [ datetime.now().timestamp() ]
 
     def register(self):
-        db.session.add(self)
-        db.session.commit()
+        # db.session.add(self)
+        db_session.add(self)
+        # db.session.commit()
+        db_session.commit()
         return
 
     def access(self):
         last_second = datetime.now() - timedelta(seconds=1)
         self.records = list(filter(lambda d: d >= last_second.timestamp(), self.records))
         self.records.append(datetime.now().timestamp())
-        db.session.commit()
+        # db.session.commit()
+        db_session.commit()
         return
 
     def ban(self):
         self.records = []
         self.banned_turn += 1
         self.accept_time = datetime.now() + timedelta(minutes=1)
-        db.session.commit()
+        # db.session.commit()
+        db_session.commit()
         return
 
     def unban(self):
         self.records.append(datetime.now().timestamp())
         self.accept_time = None
-        db.session.commit()
+        # db.session.commit()
+        db_session.commit()
         return
 
 
-class UserObject(db.Model):
+class UserObject(Base):
     __tablename__ = 'users'
     id           = Column(TINYINT(unsigned=True), primary_key=True)
     student_id   = Column(CHAR(9),     nullable=False, unique=True)
@@ -82,13 +87,16 @@ class UserObject(db.Model):
         self.minor      = minor
 
     def register(self):
-        db.session.add(self)
-        db.session.commit()
+        # db.session.add(self)
+        db_session.add(self)
+        # db.session.commit()
+        db_session.commit()
         return
 
     def update_password(self, password):
         self.password = AES_encode(password)
-        db.session.commit()
+        # db.session.commit()
+        db_session.commit()
         return
 
     @property
@@ -97,7 +105,7 @@ class UserObject(db.Model):
         return password
 
 
-class CourseObject(db.Model):
+class CourseObject(Base):
     __tablename__ = 'courses'
     id           = Column(SMALLINT(unsigned=True), primary_key=True)
     course_no    = Column(CHAR(4),      nullable=False, unique=True)
@@ -116,7 +124,7 @@ class CourseObject(db.Model):
     time_2       = Column(BIT(21),      nullable=False)
     # place: 3 bits (本部, 公館, 其他)
     place        = Column(BIT(3),       nullable=False)
-    teacher      = Column(VARCHAR(30),  nullable=False)
+    teacher      = Column(VARCHAR(50),  nullable=False)
     # domains: 7 bits ("00UG", "01UG", "02UG", "03UG", "04UG", "05UG", "06UG")
     domains      = Column(BIT(7),       nullable=False)
 
@@ -142,8 +150,10 @@ class CourseObject(db.Model):
         self.domains      = domains
 
     def register(self):
-        db.session.add(self)
-        db.session.commit()
+        # db.session.add(self)
+        db_session.add(self)
+        # db.session.commit()
+        db_session.commit()
         return
 
     @property
@@ -160,11 +170,13 @@ class CourseObject(db.Model):
         }
 
 
-class OrderObject(db.Model):
+class OrderObject(Base):
     __tablename__ = 'orders'
     id               = Column(TINYINT(unsigned=True), primary_key=True)
-    user_id          = Column(TINYINT(unsigned=True), db.ForeignKey('users.id'), nullable=False)
-    course_id        = Column(SMALLINT(unsigned=True), db.ForeignKey('courses.id'), nullable=False)
+    # user_id          = Column(TINYINT(unsigned=True), db.ForeignKey('users.id'), nullable=False)
+    user_id          = Column(TINYINT(unsigned=True), ForeignKey('users.id'), nullable=False)
+    # course_id        = Column(SMALLINT(unsigned=True), db.ForeignKey('courses.id'), nullable=False)
+    course_id        = Column(SMALLINT(unsigned=True), ForeignKey('courses.id'), nullable=False)
     status           = Column(ENUM("activate", "pause", "successful"), nullable=False)
     domain           = Column(ENUM('', "00UG", "01UG", "02UG", "03UG", "04UG",
                                    "05UG", "06UG", "07UG", "08UG", "09UG"), default='')
@@ -178,25 +190,31 @@ class OrderObject(db.Model):
         self.domain    = domain
 
     def register(self):
-        db.session.add(self)
-        db.session.commit()
+        # db.session.add(self)
+        db_session.add(self)
+        # db.session.commit()
+        db_session.commit()
         return
 
     def update_status(self, status):
         self.status = status
         if status == "activate":
             self.activate_time = datetime.now()
-        db.session.commit()
+        # db.session.commit()
+        db_session.commit()
         return
 
     def update_domain(self, domain):
         self.domain = domain
-        db.session.commit()
+        # db.session.commit()
+        db_session.commit()
         return
 
     def cancel(self):
-        db.session.delete(self)
-        db.session.commit()
+        # db.session.delete(self)
+        db_session.delete(self)
+        # db.session.commit()
+        db_session.commit()
         return
 
     @property

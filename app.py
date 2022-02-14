@@ -16,7 +16,8 @@ from flask_cors import CORS
 from api.auth import auth_api
 from api.order import order_api
 from api.course import course_api
-from database.model import db, CourseObject, import_courses
+from database.model import CourseObject, import_courses
+from database.engine import db_session, init_db
 # Robot
 import threading
 from ntnu.robot import main_controller
@@ -42,18 +43,22 @@ app.register_blueprint(auth_api, url_prefix="/auth")
 app.register_blueprint(order_api, url_prefix="/order")
 app.register_blueprint(course_api, url_prefix="/course")
 CORS(app)
-db.init_app(app)
-with app.app_context():
-    db.create_all()
-    if CourseObject.query.count() == 0:
-        import_courses()
+
+# db.init_app(app)
+# with app.app_context():
+#     db.create_all()
+
+init_db()
+if CourseObject.query.count() == 0:
+    import_courses()
+threading.Thread(target=main_controller, name="Main Controller", daemon=True).start()
 
 
 
 ''' Functions '''
-def activate_robot():
-    with app.app_context():
-        main_controller()
+# def activate_robot():
+    # with app.app_context():
+        # main_controller()
 # threading.Thread(target=activate_robot, name="Main Controller", daemon=True).start()
 
 
@@ -67,6 +72,12 @@ def hello_world():
 #     from test import main
 #     main()
 #     return
+
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db_session.remove()
+    return
 
 
 
