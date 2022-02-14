@@ -3,7 +3,7 @@ import os
 import json
 from tqdm import tqdm
 from datetime import datetime, timedelta
-# from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.dialects.mysql import \
     TINYINT, SMALLINT, CHAR, VARCHAR, \
@@ -11,14 +11,13 @@ from sqlalchemy.dialects.mysql import \
 
 from mapping import department_code2id, domain_text
 from database.utils import AES_encode, AES_decode, process_time_info
-from database.engine import Base, scoped_session_object
 
 
 
 ''' Models '''
-# db = SQLAlchemy()
+db = SQLAlchemy()
 
-class Connection(Base):
+class Connection(db.Model):
     __tablename__ = 'connections'
     id          = Column(TINYINT(unsigned=True), primary_key=True)
     target      = Column(VARCHAR(39), nullable=False, unique=True)  # Length of IPv6 = 39
@@ -33,37 +32,33 @@ class Connection(Base):
         self.records     = [ datetime.now().timestamp() ]
 
     def register(self):
-        # db.session.add(self)
-        scoped_session_object.add(self)
-        # db.session.commit()
-        scoped_session_object.commit()
+        db.session.add(self)
+        db.session.commit()
         return
 
     def access(self):
         last_second = datetime.now() - timedelta(seconds=1)
         self.records = list(filter(lambda d: d >= last_second.timestamp(), self.records))
         self.records.append(datetime.now().timestamp())
-        # db.session.commit()
-        scoped_session_object.commit()
+        db.session.commit()
         return
 
     def ban(self):
         self.records = []
         self.banned_turn += 1
         self.accept_time = datetime.now() + timedelta(minutes=1)
-        # db.session.commit()
-        scoped_session_object.commit()
+        db.session.commit()
         return
 
     def unban(self):
         self.records.append(datetime.now().timestamp())
         self.accept_time = None
-        # db.session.commit()
-        scoped_session_object.commit()
+        db.session.commit()
         return
 
 
-class UserObject(Base):
+class UserObject(db.Model):
+# class UserObject(Base):
     __tablename__ = 'users'
     id           = Column(TINYINT(unsigned=True), primary_key=True)
     student_id   = Column(CHAR(9),     nullable=False, unique=True)
@@ -87,16 +82,13 @@ class UserObject(Base):
         self.minor      = minor
 
     def register(self):
-        # db.session.add(self)
-        scoped_session_object.add(self)
-        # db.session.commit()
-        scoped_session_object.commit()
+        db.session.add(self)
+        db.session.commit()
         return
 
     def update_password(self, password):
         self.password = AES_encode(password)
-        # db.session.commit()
-        scoped_session_object.commit()
+        db.session.commit()
         return
 
     @property
@@ -105,7 +97,7 @@ class UserObject(Base):
         return password
 
 
-class CourseObject(Base):
+class CourseObject(db.Model):
     __tablename__ = 'courses'
     id           = Column(SMALLINT(unsigned=True), primary_key=True)
     course_no    = Column(CHAR(4),      nullable=False, unique=True)
@@ -150,10 +142,8 @@ class CourseObject(Base):
         self.domains      = domains
 
     def register(self):
-        # db.session.add(self)
-        scoped_session_object.add(self)
-        # db.session.commit()
-        scoped_session_object.commit()
+        db.session.add(self)
+        db.session.commit()
         return
 
     @property
@@ -170,7 +160,7 @@ class CourseObject(Base):
         }
 
 
-class OrderObject(Base):
+class OrderObject(db.Model):
     __tablename__ = 'orders'
     id               = Column(TINYINT(unsigned=True), primary_key=True)
     # user_id          = Column(TINYINT(unsigned=True), db.ForeignKey('users.id'), nullable=False)
@@ -190,31 +180,25 @@ class OrderObject(Base):
         self.domain    = domain
 
     def register(self):
-        # db.session.add(self)
-        scoped_session_object.add(self)
-        # db.session.commit()
-        scoped_session_object.commit()
+        db.session.add(self)
+        db.session.commit()
         return
 
     def update_status(self, status):
         self.status = status
         if status == "activate":
             self.activate_time = datetime.now()
-        # db.session.commit()
-        scoped_session_object.commit()
+        db.session.commit()
         return
 
     def update_domain(self, domain):
         self.domain = domain
-        # db.session.commit()
-        scoped_session_object.commit()
+        db.session.commit()
         return
 
     def cancel(self):
-        # db.session.delete(self)
-        scoped_session_object.delete(self)
-        # db.session.commit()
-        scoped_session_object.commit()
+        db.session.delete(self)
+        db.session.commit()
         return
 
     @property

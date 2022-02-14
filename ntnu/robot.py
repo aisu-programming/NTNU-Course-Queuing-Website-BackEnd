@@ -7,7 +7,7 @@ from datetime import datetime
 
 from ntnu.model import Agent
 from database.model import UserObject, CourseObject, OrderObject
-from database.engine import db_session
+from database.model import db
 
 
 
@@ -22,21 +22,20 @@ def main_controller():
     robot_logger.info("Main controller thread starts.")
 
     main_agent_user_id = int(os.environ.get("MAIN_AGENT_USER_ID"))
-    main_agent = db_session.query(UserObject).filter_by(id=main_agent_user_id).first()
+    main_agent = UserObject.query.filter_by(id=main_agent_user_id).first()
     main_agent = Agent(main_agent.student_id, main_agent.original_password)
 
     while True:
 
-        # if int(datetime.now().strftime("%d")) >= 14 and int(datetime.now().strftime("%H")) >= 9:
-        if int(datetime.now().strftime("%H")) >= 8:
+        if int(datetime.now().strftime("%H")) >= 9:
 
-            db_session.commit()
-            orders = db_session.query(OrderObject).filter_by(status="activate").all()
+            db.session.commit()  # Use to refresh session
+            orders = OrderObject.query.filter_by(status="activate").all()
             if len(orders) > 0:
                 for order in orders:
 
-                    user   = db_session.query(UserObject).filter_by(id=order.user_id).first()
-                    course = db_session.query(CourseObject).filter_by(id=order.course_id).first()
+                    user   = UserObject.query.filter_by(id=order.user_id).first()
+                    course = CourseObject.query.filter_by(id=order.course_id).first()
                     robot_logger.info(f"Main agent: Checking vacancy of order from user '{user.student_id}' ({user.name}) of course {course.course_no}.")
                     vacant = main_agent.check_course(course.course_no)
 
