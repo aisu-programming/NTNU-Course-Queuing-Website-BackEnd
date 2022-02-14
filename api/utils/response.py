@@ -1,10 +1,10 @@
 ''' Libraries '''
-from flask import jsonify
+from flask import jsonify, redirect
 
 
 
 ''' Settings '''
-__all__ = ["HTTPResponse", "HTTPError"]
+__all__ = ["HTTPResponse", "HTTPRedirect", "HTTPError"]
 
 
 
@@ -29,6 +29,12 @@ class HTTPResponse(HTTPBaseResponese):
             "message": message,
             "data": data,
         })
+        return super().__new__(HTTPBaseResponese, resp, status_code, cookies)
+
+
+class HTTPRedirect(HTTPBaseResponese):
+    def __new__(cls, location, status_code=302, cookies={}):
+        resp = redirect(location)
         return super().__new__(HTTPBaseResponese, resp, status_code, cookies)
 
 

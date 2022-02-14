@@ -247,6 +247,30 @@ class Agent(User):
     #     # 輸出網頁回傳結果內容
     #     return r
 
+    # 透過 LINE 通知搶課成功
+    def line_notify(self, course):
+        if self.user.line_uid is not None:
+            message = f"{self.user.name}，恭喜你排到課程: \n" + \
+                      f"- 課程序號: {course.course_no}\n" + \
+                      f"- 課程名稱: {course.chinese_name}\n" + \
+                      f"- 時間地點: {course.time_info}"
+            r = requests.post(
+                "https://api.line.me/v2/bot/message/push",
+                headers={
+                    "Content-Type" : "application/json",
+                    "Authorization": "Bearer Uo2XXKk/Ly4QLAnfIls4JOKCDN5GRieTAF1b8YdTSgixjScNHiqLZpttSzErIEtofLyUWou/Q3XdzZ4YqaCh9uNiPCc9i1hbxMZur9FrQi6YcMngwHbtBbrr1p1tR+LTFqCheCvmHx2+CwCntPF8YQdB04t89/1O/w1cDnyilFU="
+                },
+                data=json.dumps({
+                    "to"      : self.user.line_uid,
+                    "messages": [{
+                        "type": "text",
+                        "text": message
+                    }]
+                })
+            )
+        return
+
+    # # 獲取學校所有課程
     # def get_all_ntnu_courses(self):
     #     if self.session.cookies.get("JESSIONID") is None:
     #         self.set_cookie()

@@ -60,16 +60,17 @@ class Connection(db.Model):
 class UserObject(db.Model):
 # class UserObject(Base):
     __tablename__ = 'users'
-    id           = Column(TINYINT(unsigned=True), primary_key=True)
-    student_id   = Column(CHAR(9),     nullable=False, unique=True)
-    password     = Column(BINARY(48),  nullable=False)
-    name         = Column(VARCHAR(10), nullable=False)
-    major        = Column(VARCHAR(4),  nullable=False)
-    level        = Column(TINYINT,     default=1)
-    order_limit  = Column(TINYINT,     default=10)  # Activate orders limitation
-    major_2      = Column(VARCHAR(4))
-    minor        = Column(VARCHAR(4))
-    # grade        = Column(TINYINT(unsigned=True))
+    id          = Column(TINYINT(unsigned=True), primary_key=True)
+    student_id  = Column(CHAR(9),     nullable=False, unique=True)
+    password    = Column(BINARY(48),  nullable=False)
+    name        = Column(VARCHAR(10), nullable=False)
+    major       = Column(VARCHAR(4),  nullable=False)
+    level       = Column(TINYINT,     default=1)
+    order_limit = Column(TINYINT,     default=10)  # Activate orders limitation
+    major_2     = Column(VARCHAR(4))
+    minor       = Column(VARCHAR(4))
+    # grade       = Column(TINYINT(unsigned=True))
+    line_uid    = Column(VARCHAR(40))  # 33
 
     def __init__(self, student_id, password, name,
                  major, level=None, major_2=None, minor=None):
@@ -88,6 +89,11 @@ class UserObject(db.Model):
 
     def update_password(self, password):
         self.password = AES_encode(password)
+        db.session.commit()
+        return
+
+    def update_line(self, line_uid):
+        self.line_uid = line_uid
         db.session.commit()
         return
 

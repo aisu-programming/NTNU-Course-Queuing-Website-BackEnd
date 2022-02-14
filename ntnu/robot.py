@@ -48,9 +48,10 @@ def main_controller():
 
                         if result == "儲存成功":
                             order.update_status("successful")
+                            sub_agent.line_notify(course)
 
                     else:
-                        # robot_logger.info(f"Main agent: Order from user '{user.student_id}' ({user.name}) of course {course.course_no} has vacancy!")
+                        robot_logger.info(f"Main agent: Order from user '{user.student_id}' ({user.name}) of course {course.course_no} has vacancy!")
                         pass
                         
                     time.sleep(SLEEP_TIME)
