@@ -1,6 +1,7 @@
 ''' Libraries '''
 import os
 import jwt
+import json
 import time
 import logging
 my_selenium_logger = logging.getLogger(name="selenium-wire")
@@ -11,7 +12,8 @@ from datetime import datetime, timedelta
 from mapping import department_text2code
 from exceptions import RobotStuckException
 from database.model import UserObject, OrderObject
-from ntnu.utils.webdriver import login_course_taking_system, login_iportal, NTNU_WEBSITE_HOST, NTNU_WEBSITE_URL, NTNU_COURSE_QUERY_URL, NTNU_ENROLL_URL
+from ntnu.utils.webdriver import login_course_taking_system, login_iportal
+from ntnu.utils.webdriver import NTNU_WEBSITE_HOST, NTNU_WEBSITE_URL, NTNU_COURSE_QUERY_URL, NTNU_ENROLL_URL
 
 
 ''' Parameters '''
@@ -59,9 +61,9 @@ class User():
 
     # Log into 選課系統 with selenium, get the cookie, and set to session
     def set_cookie(self):
-        cookie, name, major = login_course_taking_system(self.student_id, self.password)
-        del cookie["httpOnly"]
-        self.session.cookies.set(**cookie)
+        cookies, name, major = login_course_taking_system(self.student_id, self.password)
+        del cookies["httpOnly"]
+        self.session.cookies.set(**cookies)
         self.login_time = datetime.now()
         self.add_course_page = False
         return name, major
@@ -134,13 +136,13 @@ class Agent(User):
         def wrapper(self, *args, **kwargs):
 
             # 超過 20 分鐘: 重置 Session
-            if self.login_time is not None and datetime.now() - self.login_time >= timedelta(minutes=19):
+            if self.login_time is not None and \
+               datetime.now() - self.login_time >= timedelta(minutes=19):
                 self.session = requests.session()
                 my_selenium_logger.info(f"Agent '{self.student_id}' ({self.user.name}) has reset its session.")
 
             # JESSIONID 為空: 重新登入
-            # if self.session.cookies.get("JSESSIONID") is None:
-            if self.user.cookies is None:
+            if self.session.cookies.get("JSESSIONID") is None:
                 my_selenium_logger.info(f"Agent '{self.student_id}' ({self.user.name}) setting cookies.")
                 self.set_cookie()
                 if self.session.cookies.get("JSESSIONID") is None:
@@ -174,70 +176,76 @@ class Agent(User):
                 break
         if len(response.text) == 0:
             raise RobotStuckException("Function: check_course can't get normal response.")
-        print(response.json()["Count"], bool(response.json()["Count"]))
-        return bool(response.json()["Count"])
+        return bool(json.loads(response.text.replace("'", '"'))["Count"])
 
     # 加選課程
-    @__check_add_course_page
-    def take_course(self, course_no, domain=''):
+    def take_course(self, course_no, domain):
+        login_course_taking_system(
+            self.student_id, self.password, take_course=True,
+            course_no=course_no, domain=domain,
+        )
+        return
 
-        # 加選課程前置步驟 1/2
-        r = self.__post(NTNU_ENROLL_URL, data={
-            "action"  : "checkCourseTime",
-            "serialNo": course_no,
-            "direct"  : "1"
-        })
-        # print("加選課程前置步驟 1/2: " + str(r) + " - " + r.text)
-
-        # 加選課程前置步驟 2/2
-        r = self.__post(NTNU_ENROLL_URL, data={
-            "action"  : "checkDomain",
-            "serialNo": course_no,
-            "direct"  : "1"
-        })
-        # print("加選課程前置步驟 2/2: " + str(r) + " - " + r.text)
-
-        extra_headers = {
-            'Host': NTNU_WEBSITE_HOST,
-            'Connection': 'keep-alive',
-            'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="96", "Google Chrome";v="96"',
-            'X-Requested-With': 'XMLHttpRequest',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'Origin': NTNU_WEBSITE_URL,
-            'Sec-Fetch-Site': 'same-origin',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Dest': 'empty',
-            'Referer': f'{NTNU_COURSE_QUERY_URL}?action=add',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Accept-Language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
-        }
-        # 如果課程非通識
-        if domain == '':
-            r = self.__post(
-                NTNU_ENROLL_URL,
-                extra_headers=extra_headers,
-                params={
-                    "action"  : "add",
-                    "serialNo": course_no,
-                    "direct"  : "1",
-                })
-            # print("如果課程非通識: " + str(r) + " - " + r.text)
-        # 如果課程是通識
-        else:
-            r = self.__post(
-                NTNU_ENROLL_URL,
-                extra_headers=extra_headers,
-                data={
-                    "action"  : "add",
-                    "serialNo": course_no,
-                    "direct"  : "1",
-                    "guDomain": domain,
-                })
-            # print("如果課程非通識: " + str(r) + " - " + r.text)
-
-        # 輸出網頁回傳結果內容
-        return r
+    # # 加選課程
+    # @__check_add_course_page
+    # def take_course(self, course_no, domain=''):
+    #     # 加選課程前置步驟 1/2
+    #     r = self.__post(NTNU_ENROLL_URL, data={
+    #         "action"  : "checkCourseTime",
+    #         "serialNo": course_no,
+    #         "direct"  : "1"
+    #     })
+    #     # print("加選課程前置步驟 1/2: " + str(r) + " - " + r.text)
+    #
+    #     # 加選課程前置步驟 2/2
+    #     r = self.__post(NTNU_ENROLL_URL, data={
+    #         "action"  : "checkDomain",
+    #         "serialNo": course_no,
+    #         "direct"  : "1"
+    #     })
+    #     # print("加選課程前置步驟 2/2: " + str(r) + " - " + r.text)
+    #
+    #     extra_headers = {
+    #         'Host': NTNU_WEBSITE_HOST,
+    #         'Connection': 'keep-alive',
+    #         'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="96", "Google Chrome";v="96"',
+    #         'X-Requested-With': 'XMLHttpRequest',
+    #         'sec-ch-ua-mobile': '?0',
+    #         'sec-ch-ua-platform': '"Windows"',
+    #         'Origin': NTNU_WEBSITE_URL,
+    #         'Sec-Fetch-Site': 'same-origin',
+    #         'Sec-Fetch-Mode': 'cors',
+    #         'Sec-Fetch-Dest': 'empty',
+    #         'Referer': f'{NTNU_COURSE_QUERY_URL}?action=add',
+    #         'Accept-Encoding': 'gzip, deflate, br',
+    #         'Accept-Language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+    #     }
+    #     # 如果課程非通識
+    #     if domain == '':
+    #         r = self.__post(
+    #             NTNU_ENROLL_URL,
+    #             extra_headers=extra_headers,
+    #             params={
+    #                 "action"  : "add",
+    #                 "serialNo": course_no,
+    #                 "direct"  : "1",
+    #             })
+    #         # print("如果課程非通識: " + str(r) + " - " + r.text)
+    #     # 如果課程是通識
+    #     else:
+    #         r = self.__post(
+    #             NTNU_ENROLL_URL,
+    #             extra_headers=extra_headers,
+    #             data={
+    #                 "action"  : "add",
+    #                 "serialNo": course_no,
+    #                 "direct"  : "1",
+    #                 "guDomain": domain,
+    #             })
+    #         # print("如果課程非通識: " + str(r) + " - " + r.text)
+    #
+    #     # 輸出網頁回傳結果內容
+    #     return r
 
     # def get_all_ntnu_courses(self):
     #     if self.session.cookies.get("JESSIONID") is None:
