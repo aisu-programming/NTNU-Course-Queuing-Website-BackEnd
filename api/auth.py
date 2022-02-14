@@ -69,7 +69,7 @@ def session():
             # Check
             student_id = student_id.upper()
             if len(student_id) != 9:
-                raise UserIdNotExistException
+                raise StudentIdNotExistException
             _ = int(student_id[:-1])
 
             user = User(student_id, password)
@@ -78,12 +78,12 @@ def session():
             return HTTPResponse("Success.", cookies=cookies)
 
         except ValueError:
-            flask_logger.warning(f"UserIdNotExistException: User '{student_id}'")
-            return HTTPError("Id or password incorrect.", 403)
+            flask_logger.warning(f"StudentIdNotExistException: User '{student_id}'")
+            return HTTPError("Student id not exist.", 403)
 
-        except UserIdNotExistException:
-            flask_logger.warning(f"UserIdNotExistException: User '{student_id}'")
-            return HTTPError("Id or password incorrect.", 403)
+        except StudentIdNotExistException:
+            flask_logger.warning(f"StudentIdNotExistException: User '{student_id}'")
+            return HTTPError("Student id not exist.", 403)
 
         except PasswordWrongException:
             flask_logger.warning(f"PasswordWrongException: User '{student_id}'")

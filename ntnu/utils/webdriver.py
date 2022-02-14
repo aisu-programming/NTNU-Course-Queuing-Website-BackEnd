@@ -4,6 +4,7 @@ import os
 import json
 import time
 import logging
+from unittest import result
 my_selenium_logger = logging.getLogger(name="selenium-wire")
 # import winsound
 # import requests
@@ -138,7 +139,7 @@ def wait_and_find_element_by_class(driver, class_):
 
 def wait_for_button_appear(driver):
     message = ''
-    for _ in range(100):
+    for _ in range(50):
         try:
             driver.find_element_by_id("button-1017-btnEl")  # 「下一頁」按鈕
             return True
@@ -146,38 +147,40 @@ def wait_for_button_appear(driver):
             pass
         try:
             driver.find_element_by_id("button-1005-btnEl")  # 「OK」按鈕
-            message = driver.find_element_by_id("messagebox-1001-displayfield-inputEl").text()
-            break
+            message = driver.find_element_by_id("messagebox-1001-displayfield-inputEl").text
+            if "請稍候" in message: raise Exception
         except:
             time.sleep(0.2)
     if "學號" in message:
-        raise UserIdNotExistException
+        raise StudentIdNotExistException
     elif "密碼" in message:
         raise PasswordWrongException
-    else:
+    elif "驗證碼" in message:
         return False
+    else:
+        raise Exception(f"Unknown message: {message}")
 
 
-# def wait_element_text_by_id(driver, id, texts):
-#     for _ in range(25):
-#         try:
-#             element = driver.find_element_by_id(id)
-#             for i, text in enumerate(texts):
-#                 if text in element.text: return i  # return condition id
-#             raise CourseTakenException
-#         except:
-#             time.sleep(0.2)
-#     raise BrowserStuckError
+def wait_element_text_by_id(driver, id, texts):
+    for _ in range(25):
+        try:
+            element = driver.find_element_by_id(id)
+            for text in texts:
+                if text in element.text: return text
+            return element.text
+        except:
+            time.sleep(0.2)
+    raise SeleniumStuckException
 
 
-# def wait_for_validate_code_button(driver, button):
-#     for _ in range(25):
-#         buttons = driver.find_elements_by_class_name("x-btn-button")
-#         if len(buttons) == 19:
-#             if button == "confirm": return buttons[17]
-#             else                  : return buttons[18]
-#         time.sleep(0.2)
-#     raise BrowserStuckError
+def wait_for_validate_code_button(driver, button):
+    for _ in range(25):
+        buttons = driver.find_elements_by_class_name("x-btn-button")
+        if len(buttons) == 19:
+            if button == "confirm": return buttons[17]
+            else                  : return buttons[18]
+        time.sleep(0.2)
+    raise SeleniumStuckException
 
 
 def wait_for_validate_code_img(driver):
@@ -214,7 +217,13 @@ def process_validate_code(validate_code):
         return ''.join(validate_code)
 
 
-def login_course_taking_system(student_id, password):
+def login_course_taking_system(student_id, password, take_course=False,
+                               course_no=None, domain=None):
+
+    if take_course:
+        assert course_no is not None
+        assert domain    is not None
+
     options = webdriver.ChromeOptions()
     # options.add_argument("--headless")
     driver = webdriver.Chrome(WEBDRIVER_PATH, options=options)
@@ -248,9 +257,9 @@ def login_course_taking_system(student_id, password):
         except PasswordWrongException:
             driver.quit()
             raise PasswordWrongException
-        except UserIdNotExistException:
+        except StudentIdNotExistException:
             driver.quit()
-            raise UserIdNotExistException
+            raise StudentIdNotExistException
         if try_turn == 4:
             driver.quit()
             my_selenium_logger.critical("Continuous 5 times failure of validation code! Abnormal!")
@@ -266,10 +275,52 @@ def login_course_taking_system(student_id, password):
     wait_and_find_element_by_id(driver, "now")
     driver.execute_script("document.getElementById('now').parentElement.remove()")  # 移除計時器
     driver.switch_to.frame(wait_and_find_element_by_id(driver, "stfseldListDo"))
-    # click_and_wait(wait_and_find_element_by_id(driver, "add-btnEl"))  # 「加選」按鈕
-    cookie = driver.get_cookies()[0]
-    driver.quit()
-    return cookie, name, major
+
+    if not take_course:
+        cookies = driver.get_cookies()[0]
+        driver.quit()
+        return cookies, name, major
+    
+    else:
+        click_and_wait(wait_and_find_element_by_id(driver, "add-btnEl"))  # 「加選」按鈕
+        wait_and_find_element_by_id(driver, "serialNo-inputEl").send_keys(course_no)
+        time.sleep(0.2)
+
+        # 驗證碼: 正確 或 錯誤
+        for try_turn in range(5):
+
+            # 驗證碼破圖
+            validate_code_img_broken_time = 0
+            while True:
+                click_and_wait(driver.find_element_by_id("button-1060-btnEl"))  # 「開課序號直接加選儲存」按鈕
+                wait_for_validate_code_img(driver)
+                validate_code_img = wait_for_validate_code_img(driver)
+                if validate_code_img is not None: break
+                else:
+                    click_and_wait(wait_for_validate_code_button(driver, "cancel"))  # 「取消」按鈕
+                    click_and_wait(wait_and_find_element_by_id(driver, "button-1005-btnIconEl"))  # 「OK」按鈕
+                    retry_time = validate_code_img_broken_time * 2 + 3
+                    time.sleep(retry_time)
+                    validate_code_img_broken_time += 1
+            
+            validate_code = dl_model.predict(model, validate_code_img)
+            validate_code = process_validate_code(validate_code)
+            wait_and_find_element_by_id(driver, "valid-inputEl").send_keys(validate_code)
+            click_and_wait(wait_for_validate_code_button(driver, "confirm"))  # 「確認」按鈕
+
+            result = wait_element_text_by_id(driver, "messagebox-1001-displayfield-inputEl", ["驗證碼錯誤", "額滿", "衝堂", "重複登記", "儲存成功"])
+
+            if result == "驗證碼錯誤":
+                click_and_wait(wait_and_find_element_by_id(driver, "button-1005-btnIconEl"))  # 「OK」按鈕
+                if try_turn == 4:
+                    result = "驗證碼連續 5 次錯誤"
+                    break
+                time.sleep(3)
+            else:
+                break
+
+        driver.quit()
+        return result
 
 
 def login_iportal(student_id, password):

@@ -1,7 +1,7 @@
 class BannedException(Exception):
     pass
 
-class UserIdNotExistException(Exception):
+class StudentIdNotExistException(Exception):
     pass
 
 class PasswordWrongException(Exception):
