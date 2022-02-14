@@ -103,7 +103,7 @@ class Model():
     def __init__(self):
         if "val_loss.h5" not in os.listdir(DIR_PATH):
             print("\nWeights file (val_loss.h5) missed, download here:\n" + 
-                "https://drive.google.com/file/d/1qdB1SECI-cwqbUQNbJ834EcRAX07i4Z5/view?usp=sharing\n")
+                "https://drive.google.com/file/d/16YL-915VVvY0bSMr2FiKhVnV19ipYF59/view?usp=sharing\n")
             raise Exception
         else:
             self.model = tf.keras.Sequential([

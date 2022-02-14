@@ -13,7 +13,7 @@ from mapping import department_text2code
 from exceptions import RobotStuckException
 from database.model import UserObject, OrderObject
 from ntnu.utils.webdriver import login_course_taking_system, login_iportal
-from ntnu.utils.webdriver import NTNU_WEBSITE_HOST, NTNU_WEBSITE_URL, NTNU_COURSE_QUERY_URL, NTNU_ENROLL_URL
+from ntnu.utils.webdriver import NTNU_WEBSITE_HOST, NTNU_COURSE_QUERY_URL
 
 
 ''' Parameters '''
