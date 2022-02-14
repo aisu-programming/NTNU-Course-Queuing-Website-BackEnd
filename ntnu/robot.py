@@ -7,6 +7,8 @@ from datetime import datetime
 
 from ntnu.model import Agent
 from database.model import UserObject, CourseObject, OrderObject
+from database.model import db
+
 
 
 ''' Parameters '''
@@ -25,9 +27,9 @@ def main_controller():
 
     while True:
 
-        # if int(datetime.now().strftime("%d")) >= 14 and int(datetime.now().strftime("%H")) >= 9:
-        if int(datetime.now().strftime("%H")) >= 8:
+        if int(datetime.now().strftime("%H")) >= 9:
 
+            db.session.commit()  # Use to refresh session
             orders = OrderObject.query.filter_by(status="activate").all()
             if len(orders) > 0:
                 for order in orders:

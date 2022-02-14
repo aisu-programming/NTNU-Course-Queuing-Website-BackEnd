@@ -4,7 +4,7 @@ import json
 from tqdm import tqdm
 from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Column
+from sqlalchemy import Column, ForeignKey
 from sqlalchemy.dialects.mysql import \
     TINYINT, SMALLINT, CHAR, VARCHAR, \
     FLOAT, BINARY, BIT, DATETIME, ENUM, JSON
@@ -16,7 +16,6 @@ from database.utils import AES_encode, AES_decode, process_time_info
 
 ''' Models '''
 db = SQLAlchemy()
-
 
 class Connection(db.Model):
     __tablename__ = 'connections'
@@ -59,6 +58,7 @@ class Connection(db.Model):
 
 
 class UserObject(db.Model):
+# class UserObject(Base):
     __tablename__ = 'users'
     id           = Column(TINYINT(unsigned=True), primary_key=True)
     student_id   = Column(CHAR(9),     nullable=False, unique=True)
@@ -116,7 +116,7 @@ class CourseObject(db.Model):
     time_2       = Column(BIT(21),      nullable=False)
     # place: 3 bits (本部, 公館, 其他)
     place        = Column(BIT(3),       nullable=False)
-    teacher      = Column(VARCHAR(30),  nullable=False)
+    teacher      = Column(VARCHAR(50),  nullable=False)
     # domains: 7 bits ("00UG", "01UG", "02UG", "03UG", "04UG", "05UG", "06UG")
     domains      = Column(BIT(7),       nullable=False)
 
@@ -163,8 +163,10 @@ class CourseObject(db.Model):
 class OrderObject(db.Model):
     __tablename__ = 'orders'
     id               = Column(TINYINT(unsigned=True), primary_key=True)
-    user_id          = Column(TINYINT(unsigned=True), db.ForeignKey('users.id'), nullable=False)
-    course_id        = Column(SMALLINT(unsigned=True), db.ForeignKey('courses.id'), nullable=False)
+    # user_id          = Column(TINYINT(unsigned=True), db.ForeignKey('users.id'), nullable=False)
+    user_id          = Column(TINYINT(unsigned=True), ForeignKey('users.id'), nullable=False)
+    # course_id        = Column(SMALLINT(unsigned=True), db.ForeignKey('courses.id'), nullable=False)
+    course_id        = Column(SMALLINT(unsigned=True), ForeignKey('courses.id'), nullable=False)
     status           = Column(ENUM("activate", "pause", "successful"), nullable=False)
     domain           = Column(ENUM('', "00UG", "01UG", "02UG", "03UG", "04UG",
                                    "05UG", "06UG", "07UG", "08UG", "09UG"), default='')
