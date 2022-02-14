@@ -3,7 +3,6 @@ import logging
 flask_logger = logging.getLogger(name="flask")
 from functools import wraps
 from flask import Blueprint, request
-from flask_cors import cross_origin
 
 from exceptions import *
 from api.utils.request import Request
@@ -55,7 +54,6 @@ def login_required(function):
 
 
 @auth_api.route("/session", methods=["GET", "POST"])
-@cross_origin(supports_credentials=True)
 @rate_limit(ip_based=True, limit=20)
 def session():
 

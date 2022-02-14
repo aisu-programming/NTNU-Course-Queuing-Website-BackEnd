@@ -2,7 +2,6 @@
 import base64
 import logging
 from flask import Blueprint
-from flask_cors import cross_origin
 from bitstring import BitArray
 from sqlalchemy import or_, and_
 
@@ -23,7 +22,6 @@ course_api = Blueprint("course_api", __name__)
 
 ''' Functions '''
 @course_api.route("/search", methods=["POST"])
-@cross_origin(supports_credentials=True)
 @Request.json("course_no: str", "course_name: str", "department: str", "domains: int",
               "teacher: str", "time: str", "place: int", "precise: bool")
 @login_detect

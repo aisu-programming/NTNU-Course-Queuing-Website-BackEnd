@@ -225,7 +225,7 @@ def login_course_taking_system(student_id, password, take_course=False,
         assert domain    is not None
 
     options = webdriver.ChromeOptions()
-    # options.add_argument("--headless")
+    options.add_argument("--headless")
     driver = webdriver.Chrome(WEBDRIVER_PATH, options=options)
     driver.get(NTNU_LOGIN_CHECK_URL)
 
