@@ -312,7 +312,8 @@ def login_course_taking_system(student_id, password, take_course=False,
         wait_and_find_element_by_id(driver, "serialNo-inputEl").send_keys(course_no)
 
         # 如果是通識課：選領域
-        if domain != '':
+        if domain in [ "語言與文學", "藝術與美感", "哲學思維與道德推理", "公民素養與社會探究",
+                       "歷史與文化", "數學與邏輯思維", "科學與生命", ]:
             wait_to_click(wait_and_find_element_by_id(driver, "domainType-inputEl"))  # 「選擇通識領域」下拉 bar 按鈕
             wait_to_click(wait_domain_option_by_text(driver, domain))                 # 各領域選項
             wait_to_click(wait_for_random_id_button(driver))                          # 「確認」按鈕
