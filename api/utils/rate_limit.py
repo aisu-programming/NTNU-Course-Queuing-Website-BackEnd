@@ -12,7 +12,9 @@ from database.model import Connection
 
 
 ''' Functions '''
-def rate_limit(original_function=None, ip_based=False, limit=3):
+def rate_limit(original_function=None, ip_based=False, limit=None):
+
+    if limit is None: limit = 20 if ip_based else 3
 
     def _decorate(function):
 

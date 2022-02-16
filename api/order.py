@@ -72,7 +72,7 @@ def order(user):
                 # action: 0 = ACTIVATE, 1 = PAUSE, 2 = DELETE
                 if change[ACTION] not in [0, 1, 2]:
                     raise DataIncorrectException("data contains invalid action option.")
-                if change[DOMAIN] not in list(range(8)):
+                if change[DOMAIN] not in list(range(11)):
                     raise DataIncorrectException("data contains invalid domain option.")
                 if len(change[COURSE_NO]) != 4:
                     raise DataIncorrectException("data contains courseNo with incorrect form.")
@@ -184,7 +184,7 @@ def order(user):
 
 
 @order_api.route("/achievement", methods=["GET"])
-@rate_limit(ip_based=True, limit=20)
+# @rate_limit(ip_based=True)
 def get_latest_success_orders():
     try:
         orders = OrderObject.query.filter_by(status="successful").order_by(OrderObject.last_update_time.desc()).limit(10)

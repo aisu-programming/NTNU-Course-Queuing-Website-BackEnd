@@ -8,7 +8,7 @@ from exceptions import *
 from api.utils.request import Request
 from api.utils.response import *
 from api.utils.jwt import jwt_decode
-from api.utils.rate_limit import rate_limit
+# from api.utils.rate_limit import rate_limit
 from ntnu.model import User, UserObject
 
 
@@ -54,7 +54,7 @@ def login_required(function):
 
 
 @auth_api.route("/session", methods=["GET", "POST"])
-@rate_limit(ip_based=True, limit=20)
+# @rate_limit(ip_based=True)
 def session():
 
     def logout():

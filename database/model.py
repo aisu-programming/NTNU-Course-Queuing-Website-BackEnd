@@ -9,7 +9,7 @@ from sqlalchemy.dialects.mysql import \
     TINYINT, SMALLINT, CHAR, VARCHAR, \
     FLOAT, BINARY, BIT, DATETIME, ENUM, JSON
 
-from mapping import department_code2id, domain_text
+from mapping import department_code2id, department_code2text, domain_text, domain_code2text
 from database.utils import AES_encode, AES_decode, process_time_info
 
 
@@ -60,17 +60,18 @@ class Connection(db.Model):
 class UserObject(db.Model):
 # class UserObject(Base):
     __tablename__ = 'users'
-    id          = Column(TINYINT(unsigned=True), primary_key=True)
-    student_id  = Column(CHAR(9),     nullable=False, unique=True)
-    password    = Column(BINARY(48),  nullable=False)
-    name        = Column(VARCHAR(10), nullable=False)
-    major       = Column(VARCHAR(4),  nullable=False)
-    level       = Column(TINYINT,     default=1)
-    order_limit = Column(TINYINT,     default=10)  # Activate orders limitation
-    major_2     = Column(VARCHAR(4))
-    minor       = Column(VARCHAR(4))
-    # grade       = Column(TINYINT(unsigned=True))
-    line_uid    = Column(VARCHAR(40))  # 33
+    id                      = Column(TINYINT(unsigned=True), primary_key=True)
+    student_id              = Column(CHAR(9),     nullable=False, unique=True)
+    password                = Column(BINARY(48),  nullable=False)
+    name                    = Column(VARCHAR(10), nullable=False)
+    major                   = Column(VARCHAR(4),  nullable=False)
+    level                   = Column(TINYINT,     default=1)
+    order_limit             = Column(TINYINT,     default=10)  # Activate orders limitation
+    major_2                 = Column(VARCHAR(4))
+    minor                   = Column(VARCHAR(4))
+    # grade                   = Column(TINYINT(unsigned=True))
+    line_uid                = Column(VARCHAR(40))  # 33
+    search_department_turns = Column(JSON)
 
     def __init__(self, student_id, password, name,
                  major, level=None, major_2=None, minor=None):
@@ -83,6 +84,8 @@ class UserObject(db.Model):
         self.minor      = minor
 
     def register(self):
+        self.search_department_turns = [ 0 ] * 170
+        self.search_department_turns[department_code2id[self.major] + 1] = 1
         db.session.add(self)
         db.session.commit()
         return
@@ -94,6 +97,19 @@ class UserObject(db.Model):
 
     def update_line(self, line_uid):
         self.line_uid = line_uid
+        db.session.commit()
+        return
+
+    def update_search_department_turns(self, departments):
+        search_department_turns = [ d for d in self.search_department_turns ]
+        if departments == ''.join([ str(d) for d in [ 1 ] * 169 ]):
+            search_department_turns[0] += 1
+            self.search_department_turns = search_department_turns
+        else:
+            for di, d in enumerate(departments):
+                if int(d):
+                    search_department_turns[di+1] += 1
+                    self.search_department_turns = search_department_turns
         db.session.commit()
         return
 
@@ -123,8 +139,8 @@ class CourseObject(db.Model):
     # place: 3 bits (本部, 公館, 其他)
     place        = Column(BIT(3),       nullable=False)
     teacher      = Column(VARCHAR(50),  nullable=False)
-    # domains: 7 bits ("00UG", "01UG", "02UG", "03UG", "04UG", "05UG", "06UG")
-    domains      = Column(BIT(7),       nullable=False)
+    # domains: 10 bits ("00UG", "01UG", "02UG", "03UG", "04UG", "05UG", "06UG", "07UG", "08UG", "09UG")
+    domains      = Column(BIT(10),       nullable=False)
 
     def __init__(
         self, course_no, course_code, chinese_name, english_name,
@@ -159,7 +175,7 @@ class CourseObject(db.Model):
             "courseCode" : self.course_code,
             "chineseName": self.chinese_name,
             "credit"     : self.credit,
-            "department" : self.department,
+            "department" : department_code2text[self.department],
             "timeInfo"   : self.time_info,
             "teacher"    : self.teacher,
             "domains"    : self.domains,
@@ -214,12 +230,12 @@ class OrderObject(db.Model):
             "courseNo"   : course.course_no,
             "chineseName": course.chinese_name,
             "credit"     : course.credit,
-            "department" : course.department,
+            "department" : department_code2text[course.department],
             "timeInfo"   : course.time_info,
             "teacher"    : course.teacher,
             "domains"    : course.domains,
             "status"     : self.status,
-            "domain"     : self.domain,
+            "domain"     : domain_code2text[self.domain] if self.domain != '' else '',
         }
 
     # For latest successful orders in index page

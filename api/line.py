@@ -32,7 +32,7 @@ def register_line(user):
             data={
                 "grant_type"   : "authorization_code",
                 "code"         : request.args.get("code"),
-                "redirect_uri" : "http://ntnu.site:5000/line/callback",
+                "redirect_uri" : "https://ntnu.site/api/line/callback",
                 "client_id"    : "1654657483",
                 "client_secret": "7db8e0100ad40cb8427524cd3735b717",
             }
@@ -48,7 +48,7 @@ def register_line(user):
             flask_logger.info(f"User '{user.student_id}' ({user.user.name}) has link LINE notification.")
         else:
             flask_logger.error(f"User '{user.student_id}' ({user.user.name}) has failure to link LINE notification.")
-        return HTTPRedirect("http://ntnu.site:3000/")
+        return HTTPRedirect("https://ntnu.site/rushlist/wait")
         
     except DataIncorrectException as ex:
         logging.warning(f"DataIncorrectException: {str(ex)}")

@@ -9,7 +9,7 @@ from exceptions import *
 from api.auth import login_detect
 from api.utils.request import Request
 from api.utils.response import *
-from api.utils.rate_limit import rate_limit
+# from api.utils.rate_limit import rate_limit
 from database.model import CourseObject
 
 
@@ -21,47 +21,88 @@ course_api = Blueprint("course_api", __name__)
 
 
 ''' Functions '''
-@course_api.route("/search", methods=["POST"])
-@Request.json("course_no: str", "course_name: str", "department: str", "domains: int",
-              "teacher: str", "time: str", "place: int", "precise: bool")
+@course_api.route("/", methods=["GET"])
 @login_detect
-@rate_limit(ip_based=True, limit=20)
-def search_courses(course_no, course_name, department, domains,
-                   teacher, time, place, precise, **kwargs):
+# @rate_limit(ip_based=True)
+def get_preference(**kwargs):
+
+    def default_preference():
+        return HTTPResponse("Success.", data={"sequence": list(range(170))})
+
+    def personal_preference(**kwargs):
+        turns = kwargs["user"].user.search_department_turns
+        seq = list(zip( list(range(170)), turns ))
+        seq = sorted(seq, key=lambda i: i[1], reverse=True)
+        return HTTPResponse("Success.", data={"sequence": [ s[0] for s in seq ]})
+
     try:
-        # id
+        if kwargs.get("user") is None:
+            return default_preference()
+        else:
+            return personal_preference(**kwargs)
+
+    except DataIncorrectException as ex:
+        logging.warning(f"DataIncorrectException: {str(ex)}")
+        return HTTPError(str(ex), 403)
+
+    except Exception as ex:
+        logging.error(f"Unknown exception: {str(ex)}")
+        return HTTPError(str(ex), 404)
+
+
+@course_api.route("/search", methods=["POST"])
+@Request.json("course_no: str", "course_name: str", "departments: str", "domains: int",
+              "teacher: str", "times: str", "places: int", "precise: bool")
+@login_detect
+# @rate_limit(ip_based=True)
+def search_courses(course_no, course_name, departments, domains,
+                   teacher, times, places, precise, **kwargs):
+    try:
+        # Check id
         if course_no != "" and len(course_no) != 4:
             raise DataIncorrectException("courseNo form incorrect.")
 
-        # name
+        # Check name
         course_name = course_name.strip()
 
-        # department
-        department = BitArray(base64.b64decode(department.encode("utf-8"))).bin[7:]
-        if len(department) != 169:
-            raise DataIncorrectException("department form incorrect.")
-        department_1 = int(department[   : 64], base=2)
-        department_2 = int(department[ 64:128], base=2)
-        department_3 = int(department[128:   ], base=2)
+        # Check departments
+        departments = BitArray(base64.b64decode(departments.encode("utf-8"))).bin[7:]
+        if len(departments) != 169:
+            raise DataIncorrectException("departments form incorrect.")
+        if departments == ''.join([ str(d) for d in [ 0 ] * 169 ]):
+            departments = '1' + ''.join([ str(d) for d in [ 0 ] * 168 ])
+        departments_1 = int(departments[   : 64], base=2)
+        departments_2 = int(departments[ 64:128], base=2)
+        departments_3 = int(departments[128:   ], base=2)
 
-        # teacher
+        # Check domains
+        if domains not in list(range(1024)):
+            raise DataIncorrectException("domains form incorrect.")
+
+        # Check teacher
         teacher = teacher.strip()
 
-        # time
-        time = BitArray(base64.b64decode(time.encode("utf-8"))).bin[3:]
-        if len(time) != 85:
-            raise DataIncorrectException("time form incorrect.")
-        time_1 = int(time[:64], base=2)
-        time_2 = int(time[64:], base=2)
+        # Check times
+        times = BitArray(base64.b64decode(times.encode("utf-8"))).bin[3:]
+        if len(times) != 85:
+            raise DataIncorrectException("times form incorrect.")
+        times_1 = int(times[:64], base=2)
+        times_2 = int(times[64:], base=2)
 
+        # Check places
+        if places not in list(range(8)):
+            raise DataIncorrectException("places form incorrect.")
+
+
+        # Start searching (filtering)
         if course_no != "":
             courses = CourseObject.query.filter_by(course_no=course_no)
         else:
             courses = CourseObject.query
             courses = courses.filter(or_(
-                CourseObject.department_1.op('&')(department_1),
-                CourseObject.department_2.op('&')(department_2),
-                CourseObject.department_3.op('&')(department_3),
+                CourseObject.department_1.op('&')(departments_1),
+                CourseObject.department_2.op('&')(departments_2),
+                CourseObject.department_3.op('&')(departments_3),
             ))
             if course_name != "":
                 courses = courses.filter(or_(
@@ -70,19 +111,19 @@ def search_courses(course_no, course_name, department, domains,
                 ))
             if teacher != "":
                 courses = courses.filter(CourseObject.teacher.contains(teacher))
-            if time_1 != 0 and time_2 != 0:
+            if times_1 != 0 and times_2 != 0:
                 if precise:
                     courses = courses.filter(and_(
-                        CourseObject.time_1.op('|')(time_1)==time_1,
-                        CourseObject.time_2.op('|')(time_2)==time_2,
-                    )).params(param_1=time_1, param_2=time_2)
+                        CourseObject.time_1.op('|')(times_1)==times_1,
+                        CourseObject.time_2.op('|')(times_2)==times_2,
+                    )).params(param_1=times_1, param_2=times_2)
                 else:
                     courses = courses.filter(or_(
-                        CourseObject.time_1.op('&')(time_1),
-                        CourseObject.time_2.op('&')(time_2),
+                        CourseObject.time_1.op('&')(times_1),
+                        CourseObject.time_2.op('&')(times_2),
                     ))
-            if place != 0:
-                courses = courses.filter(CourseObject.place.op('&')(place))
+            if places != 0:
+                courses = courses.filter(CourseObject.place.op('&')(places))
             if domains != 0:
                 courses = courses.filter(CourseObject.domains.op('&')(domains))
             
@@ -91,8 +132,13 @@ def search_courses(course_no, course_name, department, domains,
         for ci in range(len(courses)):
             courses[ci]["isOrdered"] = False
 
+
+        # If user has logged in
         user = kwargs.get("user")
         if user is not None:
+            # Update user's searching preference
+            user.user.update_search_department_turns(departments)
+            # Filter "isOrdered" key in returning data
             ordered_courses_ids = [ order.course_id for order in user.unfinished_orders ]
             ordered_courses     = CourseObject.query.filter(CourseObject.id.in_(ordered_courses_ids)).all()
             ordered_courses_nos = [ course.course_no for course in ordered_courses ]

@@ -6,14 +6,16 @@ department_text  = [ "通識", "共同科", "師培學院", "普通體育", "全
 department_code = [ "GU", "CU", "EU", "PE", "VS", "E", "EU00", "EM00", "ED00", "EU01", "EM01", "ED01", "EU02", "EM02", "ED02", "EU05", "EM05", "ED05", "EU06", "EM06", "ED06", "EU07", "EM07", "ED07", "EM08", "ED08", "EU09", "EM09", "ED09", "EU11", "EM15", "ED15", "EM16", "EM17", "EU13", "EM03", "ED03", "L", "LU20", "LM20", "LU21", "LM21", "LD21", "SA21", "LU22", "LM22", "SA22", "LU23", "LM23", "LD23", "LM25", "LD25", "LU26", "LM26", "LM27", "SU40", "SM40", "SU41", "SM41", "SU42", "SM42", "SD42", "SU43", "SM43", "SD43", "SU44", "SM44", "SD44", "SM45", "SD45", "SM46", "SD46", "SU47", "SM47", "SD50", "SU51", "SM51", "SM52", "T", "TU60", "TM60", "TD60", "TM67", "TU68", "TM68", "TD68", "H", "HU70", "HM70", "HD70", "HU71", "HM71", "HD71", "HU72", "HM72", "HU73", "HM73", "HD73", "HU75", "HM75", "HU76", "HU77", "HM77", "A", "AU30", "AM30", "AD30", "AM31", "AD31", "AU32", "AM32", "I", "IM82", "IU83", "IM83", "ID83", "IU84", "IM84", "ID84", "IM86", "IM87", "IM88", "IM89", "MU90", "MM90", "MD90", "MM91", "MU92", "MM92", "O", "OM55", "OM56", "OU57", "ZU66", "ZU67", "ZU68", "ZU69", "ZU73", "ZU74", "ZU75", "ZU76", "ZU77", "ZU78", "ZU79", "ZU83", "ZU84", "ZU88", "ZU89", "ZU92", "ZU93", "ZU94", "ZU97", "ZU98", "ZU9A", "ZU9B", "ZU9C", "ZU9E", "ZU9K", "ZU9O", "ZU9P", "ZU9Q", "ZU9R", "ZU9T", "ZU9U", "ZU9V", "ZU9W", "ZU9X", "ZU9Y", "ZU9Z" ]  # ""
 
 department_text2code = dict(zip(department_text, department_code))
+department_code2text = dict(zip(department_code, department_text))
 department_code2id   = dict(zip(department_code, list(range(len(department_code)))))
 
 
 
 """ Domain """
-domain_text = [ "語言與文學", "藝術與美感", "哲學思維與道德推理", "公民素養與社會探究", "歷史與文化", "數學與邏輯思維", "科學與生命" ]  # "請選擇", "第二外語", "生活技能", "自主學習", "所有通識"
+domain_text = [ "語言與文學", "藝術與美感", "哲學思維與道德推理", "公民素養與社會探究", "歷史與文化", "數學與邏輯思維", "科學與生命", "第二外語", "生活技能", "自主學習" ]  # "請選擇", "所有通識"
 
-# domain_code = [ "00UG", "01UG", "02UG", "03UG", "04UG", "05UG", "06UG" ]  # "0", "07UG", "08UG", "09UG", "all"
+domain_code = [ "00UG", "01UG", "02UG", "03UG", "04UG", "05UG", "06UG", "07UG", "08UG", "09UG" ]  # "0", "all"
 
 # domain_text2code = dict(zip(domain_text, domain_code))
+domain_code2text = dict(zip(domain_code, domain_text))
 # domain_code2id   = dict(zip(domain_code, list(range(len(domain_code)))))
