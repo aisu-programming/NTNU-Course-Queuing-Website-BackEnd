@@ -256,13 +256,13 @@ def import_courses():
         # option_code     = course["optionCode"]  # 必修, 選修, 通識
 
         credit = float(credit)
-        department = [0] * 169
+        department = [ 0 ] * 169
         department[department_code2id[dept_code]] = 1
         department_1 = int(''.join(str(s) for s in department[   : 64]), base=2)
         department_2 = int(''.join(str(s) for s in department[ 64:128]), base=2)
         department_3 = int(''.join(str(s) for s in department[128:   ]), base=2)
         time_1, time_2, place = process_time_info(time_info)
-        domains = [0] * 7
+        domains = [ 0 ] * 10
         for dti, dt in enumerate(domain_text):
             if dt in v_chn_name: domains[dti] = 1
         domains = int(''.join(str(d) for d in domains), base=2)

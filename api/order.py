@@ -36,7 +36,7 @@ def is_domain_invalid(course, domain_target):
     if course.domains == 0 and domain_target == 0:
         return False
     else:
-        domain = [ 0 ] * 7
+        domain = [ 0 ] * 10
         if domain_target != 0: domain[domain_target-1] = 1
         domain = int(''.join(str(d) for d in domain), base=2)
         if course.domains & domain:
@@ -184,7 +184,6 @@ def order(user):
 
 
 @order_api.route("/achievement", methods=["GET"])
-# @cross_origin(supports_credentials=True)
 @rate_limit(ip_based=True, limit=20)
 def get_latest_success_orders():
     try:
