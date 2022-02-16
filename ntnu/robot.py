@@ -44,11 +44,13 @@ def main_controller():
                         sub_agent = Agent(user.student_id, user.original_password)
                         robot_logger.info(f"Sub agent '{user.student_id}' ({user.name}): Taking course {course.course_no}!")
                         result = sub_agent.take_course(course.course_no, order.domain)
-                        robot_logger.info(f"Sub agent '{user.student_id}' ({user.name}): Result of taking course {course.course_no}: {result}.")
 
                         if result == "儲存成功":
+                            robot_logger.info(f"Sub agent '{user.student_id}' ({user.name}): Result of taking course {course.course_no}: {result}.")
                             order.update_status("successful")
                             sub_agent.line_notify(course)
+                        else:
+                            robot_logger.warning(f"Sub agent '{user.student_id}' ({user.name}): Result of taking course {course.course_no}: {result}.")
 
                     else:
                         robot_logger.info(f"Main agent: Order from user '{user.student_id}' ({user.name}) of course {course.course_no} has vacancy!")

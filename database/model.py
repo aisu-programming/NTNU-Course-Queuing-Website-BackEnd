@@ -217,6 +217,7 @@ class OrderObject(db.Model):
             "department" : course.department,
             "timeInfo"   : course.time_info,
             "teacher"    : course.teacher,
+            "domains"    : course.domains,
             "status"     : self.status,
             "domain"     : self.domain,
         }
