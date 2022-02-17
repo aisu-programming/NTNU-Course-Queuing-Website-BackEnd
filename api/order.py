@@ -184,7 +184,7 @@ def order(user):
 
 
 @order_api.route("/achievement", methods=["GET"])
-# @rate_limit(ip_based=True)
+@rate_limit(ip_based=True)
 def get_latest_success_orders():
     try:
         orders = OrderObject.query.filter_by(status="successful").order_by(OrderObject.last_update_time.desc()).limit(10)

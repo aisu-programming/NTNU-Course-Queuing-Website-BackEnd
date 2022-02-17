@@ -23,7 +23,7 @@ def rate_limit(original_function=None, ip_based=False, limit=None):
 
             try:
                 if ip_based:
-                    target = request.remote_addr
+                    target = request.headers.get("X-Real-IP")
                 else:
                     target = kwargs["user"].student_id
 

@@ -10,7 +10,7 @@ from exceptions import *
 from api.auth import login_detect
 from api.utils.request import Request
 from api.utils.response import *
-# from api.utils.rate_limit import rate_limit
+from api.utils.rate_limit import rate_limit
 from database.model import CourseObject
 
 
@@ -24,7 +24,7 @@ course_api = Blueprint("course_api", __name__)
 ''' Functions '''
 @course_api.route("/", methods=["GET"])
 @login_detect
-# @rate_limit(ip_based=True)
+@rate_limit(ip_based=True)
 def get_preference(**kwargs):
 
     def default_preference():
@@ -55,7 +55,7 @@ def get_preference(**kwargs):
 @Request.json("course_no: str", "course_name: str", "departments: str", "domains: int",
               "teacher: str", "times: str", "places: int", "precise: bool")
 @login_detect
-# @rate_limit(ip_based=True)
+@rate_limit(ip_based=True)
 def search_courses(course_no, course_name, departments, domains,
                    teacher, times, places, precise, **kwargs):
     try:

@@ -8,7 +8,7 @@ from exceptions import *
 from api.utils.request import Request
 from api.utils.response import *
 from api.utils.jwt import jwt_decode
-# from api.utils.rate_limit import rate_limit
+from api.utils.rate_limit import rate_limit
 from ntnu.model import User, UserObject
 
 
@@ -41,7 +41,10 @@ def login_required(function):
     @Request.cookies(vars_dict={"token": "jwt"})
     def wrapper(token, *args, **kwargs):
         if token is None:
-            return HTTPError("Not logged in.", 403)
+            return HTTPError("Not logged in. " + \
+                             "For people who saw this message after you tried to link LINE Bot, " + \
+                             "please try using default browser to login and link LINE Bot again~ " + \
+                             "We will soon fix this bug, please wait patiently! <(_ _)>", 403)
         json = jwt_decode(token)
         if json is None:
             return HTTPError("JWT token invalid.", 403)
@@ -54,7 +57,7 @@ def login_required(function):
 
 
 @auth_api.route("/session", methods=["GET", "POST"])
-# @rate_limit(ip_based=True)
+@rate_limit(ip_based=True)
 def session():
 
     def logout():
