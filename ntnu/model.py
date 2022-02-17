@@ -180,11 +180,10 @@ class Agent(User):
 
     # 加選課程
     def take_course(self, course_no, domain):
-        login_course_taking_system(
+        return login_course_taking_system(
             self.student_id, self.password, take_course=True,
             course_no=course_no, domain=domain,
         )
-        return
 
     # # 加選課程
     # @__check_add_course_page
@@ -258,7 +257,7 @@ class Agent(User):
                 "https://api.line.me/v2/bot/message/push",
                 headers={
                     "Content-Type" : "application/json",
-                    "Authorization": "Bearer Uo2XXKk/Ly4QLAnfIls4JOKCDN5GRieTAF1b8YdTSgixjScNHiqLZpttSzErIEtofLyUWou/Q3XdzZ4YqaCh9uNiPCc9i1hbxMZur9FrQi6YcMngwHbtBbrr1p1tR+LTFqCheCvmHx2+CwCntPF8YQdB04t89/1O/w1cDnyilFU="
+                    "Authorization": "Bearer 7MwRTwXx3QP1AD7m5Ifpom8mUP2JQp+Yz+jr4nW+4Q3kuuh+o72XdtQtjuSkzZfF+oy2BbD528MHG7LHRBSImwmhg+w2tXNrH0T0L0CU1T88uS1+f1kaSmKgNHI+bi0zTtf+SZk/0ynAGaMII0f8KQdB04t89/1O/w1cDnyilFU="
                 },
                 data=json.dumps({
                     "to"      : self.user.line_uid,

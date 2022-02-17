@@ -12,7 +12,6 @@ os.environ["ROOT_PATH"] = os.path.dirname(os.path.abspath(__file__))
 ''' Libraries '''
 # Flask
 from flask import Flask
-from flask_cors import CORS
 from api.auth import auth_api
 from api.line import line_api
 from api.order import order_api
@@ -44,7 +43,6 @@ app.register_blueprint(auth_api, url_prefix="/auth")
 app.register_blueprint(line_api, url_prefix="/line")
 app.register_blueprint(order_api, url_prefix="/order")
 app.register_blueprint(course_api, url_prefix="/course")
-CORS(app, supports_credentials= True)
 
 db.init_app(app)
 with app.app_context():
@@ -75,4 +73,8 @@ def hello_world():
 
 
 ''' Run '''
-app.run(host="0.0.0.0")
+# app.run()
+app.run(ssl_context='adhoc')
+# app.run(ssl_context=("cert/cert1.pem", "cert/privkey1.pem"))
+# app.run(host="0.0.0.0", ssl_context=("cert/cert1.pem", "cert/privkey1.pem"))
+# app.run(host="0.0.0.0", port=4999, ssl_context=("cert/cert1.pem", "cert/privkey1.pem"))

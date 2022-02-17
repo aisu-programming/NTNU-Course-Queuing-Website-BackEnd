@@ -1,6 +1,7 @@
 ''' Libraries '''
 import os
 import json
+import pytz
 from tqdm import tqdm
 from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
@@ -15,6 +16,7 @@ from database.utils import AES_encode, AES_decode, process_time_info
 
 
 ''' Models '''
+TZ_TW = pytz.timezone("Asia/Taipei")
 db = SQLAlchemy()
 
 class Connection(db.Model):
@@ -184,16 +186,18 @@ class CourseObject(db.Model):
 
 class OrderObject(db.Model):
     __tablename__ = 'orders'
-    id               = Column(TINYINT(unsigned=True), primary_key=True)
-    # user_id          = Column(TINYINT(unsigned=True), db.ForeignKey('users.id'), nullable=False)
-    user_id          = Column(TINYINT(unsigned=True), ForeignKey('users.id'), nullable=False)
-    # course_id        = Column(SMALLINT(unsigned=True), db.ForeignKey('courses.id'), nullable=False)
-    course_id        = Column(SMALLINT(unsigned=True), ForeignKey('courses.id'), nullable=False)
-    status           = Column(ENUM("activate", "pause", "successful"), nullable=False)
-    domain           = Column(ENUM('', "00UG", "01UG", "02UG", "03UG", "04UG",
-                                   "05UG", "06UG", "07UG", "08UG", "09UG"), default='')
-    activate_time    = Column(DATETIME)
-    last_update_time = Column(DATETIME, onupdate=datetime.now, default=datetime.now)
+    id                = Column(TINYINT(unsigned=True), primary_key=True)
+    # user_id           = Column(TINYINT(unsigned=True), db.ForeignKey('users.id'), nullable=False)
+    user_id           = Column(TINYINT(unsigned=True), ForeignKey('users.id'), nullable=False)
+    # course_id         = Column(SMALLINT(unsigned=True), db.ForeignKey('courses.id'), nullable=False)
+    course_id         = Column(SMALLINT(unsigned=True), ForeignKey('courses.id'), nullable=False)
+    status            = Column(ENUM("activate", "pause", "successful"), nullable=False)
+    # status            = Column(ENUM("activate", "pause", "successful", "terminated"), nullable=False)
+    domain            = Column(ENUM('', "00UG", "01UG", "02UG", "03UG", "04UG",
+                                    "05UG", "06UG", "07UG", "08UG", "09UG"), default='')
+    activate_time     = Column(DATETIME)
+    last_update_time  = Column(DATETIME, onupdate=datetime.now, default=datetime.now)
+    # terminated_reason = Column(VARCHAR(50))
 
     def __init__(self, user_id, course_id, status, domain=''):
         self.user_id   = user_id
@@ -202,6 +206,8 @@ class OrderObject(db.Model):
         self.domain    = domain
 
     def register(self):
+        if self.status == "activate":
+            self.activate_time = datetime.now()
         db.session.add(self)
         db.session.commit()
         return
@@ -247,7 +253,7 @@ class OrderObject(db.Model):
             "student_id" : user.student_id,
             "courseNo"   : course.course_no,
             "chineseName": course.chinese_name,
-            "succeedTime": self.last_update_time,
+            "succeedTime": self.last_update_time.replace(tzinfo=TZ_TW),
         }
 
 

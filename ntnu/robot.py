@@ -12,7 +12,7 @@ from database.model import db
 
 
 ''' Parameters '''
-SLEEP_TIME = 10
+SLEEP_TIME = 15
 
 
 
@@ -32,6 +32,7 @@ def main_controller():
             db.session.commit()  # Use to refresh session
             orders = OrderObject.query.filter_by(status="activate").all()
             if len(orders) > 0:
+
                 for order in orders:
 
                     user   = UserObject.query.filter_by(id=order.user_id).first()
@@ -52,10 +53,6 @@ def main_controller():
                         else:
                             robot_logger.warning(f"Sub agent '{user.student_id}' ({user.name}): Result of taking course {course.course_no}: {result}.")
 
-                    else:
-                        robot_logger.info(f"Main agent: Order from user '{user.student_id}' ({user.name}) of course {course.course_no} has vacancy!")
-                        pass
-                        
                     time.sleep(SLEEP_TIME)
             
             else:

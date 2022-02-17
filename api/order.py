@@ -70,9 +70,9 @@ def order(user):
                 if type(change[COURSE_NO]) != str or type(change[ACTION]) != int or type(change[DOMAIN]) != int:
                     raise DataIncorrectException("data contains invalid data type.")
                 # action: 0 = ACTIVATE, 1 = PAUSE, 2 = DELETE
-                if change[ACTION] not in [0, 1, 2]:
+                if change[ACTION] not in [ 0, 1, 2 ]:
                     raise DataIncorrectException("data contains invalid action option.")
-                if change[DOMAIN] not in list(range(11)):
+                if change[DOMAIN] not in [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]:
                     raise DataIncorrectException("data contains invalid domain option.")
                 if len(change[COURSE_NO]) != 4:
                     raise DataIncorrectException("data contains courseNo with incorrect form.")
@@ -189,6 +189,7 @@ def get_latest_success_orders():
     try:
         orders = OrderObject.query.filter_by(status="successful").order_by(OrderObject.last_update_time.desc()).limit(10)
         orders = [ order.json_with_user_info for order in orders ]
+        orders = sorted(orders, key=lambda o: o["succeedTime"], reverse=True)
         return HTTPResponse("Success.", data={"orders": orders})
 
     except Exception as ex:

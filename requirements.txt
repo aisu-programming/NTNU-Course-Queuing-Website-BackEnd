@@ -3,6 +3,7 @@ python-dotenv
 
 # Database
 pymysql
+pytz
 
 # Back-End
 flask

@@ -1,6 +1,7 @@
 ''' Libraries '''
 import base64
 import logging
+flask_logger = logging.getLogger(name="flask")
 from flask import Blueprint
 from bitstring import BitArray
 from sqlalchemy import or_, and_
@@ -58,6 +59,13 @@ def get_preference(**kwargs):
 def search_courses(course_no, course_name, departments, domains,
                    teacher, times, places, precise, **kwargs):
     try:
+
+        # If user has logged in
+        user = kwargs.get("user")
+        if user is not None:
+            flask_logger.info(f"User '{user.student_id}' ({user.user.name}) is searching courses.")
+
+
         # Check id
         if course_no != "" and len(course_no) != 4:
             raise DataIncorrectException("courseNo form incorrect.")
@@ -66,17 +74,18 @@ def search_courses(course_no, course_name, departments, domains,
         course_name = course_name.strip()
 
         # Check departments
+        if departments == "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==":
+            departments = "Af///////////////////////////w=="
         departments = BitArray(base64.b64decode(departments.encode("utf-8"))).bin[7:]
         if len(departments) != 169:
             raise DataIncorrectException("departments form incorrect.")
-        if departments == ''.join([ str(d) for d in [ 0 ] * 169 ]):
-            departments = '1' + ''.join([ str(d) for d in [ 0 ] * 168 ])
         departments_1 = int(departments[   : 64], base=2)
         departments_2 = int(departments[ 64:128], base=2)
         departments_3 = int(departments[128:   ], base=2)
 
         # Check domains
-        if domains not in list(range(1024)):
+        # if domains not in list(range(1024)):
+        if domains >= 1024 or domains < 0:
             raise DataIncorrectException("domains form incorrect.")
 
         # Check teacher
@@ -90,7 +99,7 @@ def search_courses(course_no, course_name, departments, domains,
         times_2 = int(times[64:], base=2)
 
         # Check places
-        if places not in list(range(8)):
+        if places not in [ 0, 1, 2, 3, 4, 5, 6, 7 ]:
             raise DataIncorrectException("places form incorrect.")
 
 

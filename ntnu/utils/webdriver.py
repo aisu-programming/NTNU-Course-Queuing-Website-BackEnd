@@ -12,6 +12,7 @@ my_selenium_logger = logging.getLogger(name="selenium-wire")
 from PIL import Image
 from seleniumwire import webdriver
 
+from mapping import domain_code2text
 from exceptions import *
 from validation.model import model
 
@@ -80,7 +81,7 @@ NTNU_IPORTAL_URL      = "https://iportal.ntnu.edu.tw/ntnu/"
 
 
 def wait_to_click(element):
-    for _ in range(25):
+    for _ in range(15):
         try:
             element.click()
             time.sleep(1)
@@ -94,7 +95,7 @@ def wait_to_click(element):
 #     for _ in range(20):
 #         time.sleep(0.25)
 #         if url_content in driver.current_url: return
-#     raise BrowserStuckError
+#     raise SeleniumStuckException
 
 
 def wait_and_find_element_by_id(driver, id):
@@ -140,7 +141,7 @@ def wait_and_find_element_by_class(driver, class_):
 def wait_domain_option_by_text(driver, text):
     for _ in range(50):
         try:
-            element = driver.find_elements_by_xpath(f"//li[@role='option'][contains(text(), {text})]")
+            element = driver.find_element_by_xpath(f"//li[@role='option'][contains(text(), {text})]")
             return element
         except:
             time.sleep(0.2)
@@ -244,9 +245,10 @@ def login_course_taking_system(student_id, password, take_course=False,
     if take_course:
         assert course_no is not None
         assert domain    is not None
+        if domain != '': domain = domain_code2text[domain]
 
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
+    # options.add_argument("--headless")
     driver = webdriver.Chrome(WEBDRIVER_PATH, options=options)
     driver.get(NTNU_LOGIN_CHECK_URL)
 
@@ -292,7 +294,7 @@ def login_course_taking_system(student_id, password, take_course=False,
 
 
     try:
-        wait_to_click(wait_and_find_element_by_id(driver, "button-1005-btnEl"))  # 教程學生的「ok」按鈕
+        wait_to_click(wait_and_find_element_by_id(driver, "button-1005-btnEl"))  # 教程學生的「OK」按鈕
     except:
         pass
     wait_to_click(wait_and_find_element_by_id(driver, "button-1017-btnEl"))  # 「下一頁」按鈕
@@ -311,13 +313,6 @@ def login_course_taking_system(student_id, password, take_course=False,
         wait_to_click(wait_and_find_element_by_id(driver, "add-btnEl"))  # 「加選」按鈕
         wait_and_find_element_by_id(driver, "serialNo-inputEl").send_keys(course_no)
 
-        # 如果是通識課：選領域
-        if domain in [ "語言與文學", "藝術與美感", "哲學思維與道德推理", "公民素養與社會探究",
-                       "歷史與文化", "數學與邏輯思維", "科學與生命", ]:
-            wait_to_click(wait_and_find_element_by_id(driver, "domainType-inputEl"))  # 「選擇通識領域」下拉 bar 按鈕
-            wait_to_click(wait_domain_option_by_text(driver, domain))                 # 各領域選項
-            wait_to_click(wait_for_random_id_button(driver))                          # 「確認」按鈕
-
         # 驗證碼: 正確 或 錯誤
         time.sleep(0.2)
         for try_turn in range(5):
@@ -325,7 +320,15 @@ def login_course_taking_system(student_id, password, take_course=False,
             # 驗證碼破圖
             validate_code_img_broken_time = 0
             while True:
-                wait_to_click(driver.find_element_by_id("button-1060-btnEl"))  # 「開課序號直接加選儲存」按鈕
+                wait_to_click(wait_and_find_element_by_id(driver, "button-1060-btnEl"))  # 「開課序號直接加選儲存」按鈕
+
+                # 如果是通識課：選領域
+                if domain in [ "語言與文學", "藝術與美感", "哲學思維與道德推理", "公民素養與社會探究",
+                            "歷史與文化", "數學與邏輯思維", "科學與生命", ]:
+                    wait_to_click(wait_and_find_element_by_id(driver, "domainType-inputEl"))  # 「選擇通識領域」下拉 bar 按鈕
+                    wait_to_click(wait_domain_option_by_text(driver, domain))                 # 各領域選項
+                    wait_to_click(wait_for_random_id_button(driver))                          # 「確認」按鈕
+
                 wait_for_validate_code_img(driver)
                 validate_code_img = wait_for_validate_code_img(driver)
                 if validate_code_img is not None: break
@@ -336,7 +339,7 @@ def login_course_taking_system(student_id, password, take_course=False,
                     time.sleep(retry_time)
                     validate_code_img_broken_time += 1
             
-            validate_code = dl_model.predict(model, validate_code_img)
+            validate_code = dl_model.predict(validate_code_img)
             validate_code = process_validate_code(validate_code)
             wait_and_find_element_by_id(driver, "valid-inputEl").send_keys(validate_code)
             wait_to_click(wait_for_validate_code_button(driver, "confirm"))  # 「確認」按鈕

@@ -23,7 +23,9 @@ line_api = Blueprint("line_api", __name__)
 @login_required
 @rate_limit
 def register_line(user):
+
     try:
+        flask_logger.info(f"User '{user.student_id}' ({user.user.name}) trying to link LINE notification.")
         response = requests.post(
             "https://api.line.me/oauth2/v2.1/token",
             headers={
@@ -33,19 +35,19 @@ def register_line(user):
                 "grant_type"   : "authorization_code",
                 "code"         : request.args.get("code"),
                 "redirect_uri" : "https://ntnu.site/api/line/callback",
-                "client_id"    : "1654657483",
-                "client_secret": "7db8e0100ad40cb8427524cd3735b717",
+                "client_id"    : "1656899574",
+                "client_secret": "0abf5b230bd3a055976446df5bbe8d75",
             }
         )
         line_data = response.json()
 
         if response.ok:
             id_token = jwt_decode(token=line_data["id_token"],
-                                  jwt_secret="7db8e0100ad40cb8427524cd3735b717",
-                                  audience="1654657483",
+                                  jwt_secret="0abf5b230bd3a055976446df5bbe8d75",
+                                  audience="1656899574",
                                   jwt_issuer="https://access.line.me")
             user.user.update_line(id_token["sub"])
-            flask_logger.info(f"User '{user.student_id}' ({user.user.name}) has link LINE notification.")
+            flask_logger.info(f"User '{user.student_id}' ({user.user.name}) has successfully linked LINE notification!")
         else:
             flask_logger.error(f"User '{user.student_id}' ({user.user.name}) has failure to link LINE notification.")
         return HTTPRedirect("https://ntnu.site/rushlist/wait")
