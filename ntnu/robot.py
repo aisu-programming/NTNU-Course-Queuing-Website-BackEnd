@@ -46,7 +46,7 @@ def main_controller():
                         robot_logger.info(f"Sub agent '{user.student_id}' ({user.name}): Taking course {course.course_no}!")
                         result = sub_agent.take_course(course.course_no, order.domain)
 
-                        if result == "儲存成功":
+                        if "儲存成功" in result:
                             robot_logger.info(f"Sub agent '{user.student_id}' ({user.name}): Result of taking course {course.course_no}: {result}.")
                             order.update_status("successful")
                             sub_agent.line_notify(course)
