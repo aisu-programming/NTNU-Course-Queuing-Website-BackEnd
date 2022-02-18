@@ -12,10 +12,14 @@ department_code2id   = dict(zip(department_code, list(range(len(department_code)
 
 
 """ Domain """
-domain_text = [ "語言與文學", "藝術與美感", "哲學思維與道德推理", "公民素養與社會探究", "歷史與文化", "數學與邏輯思維", "科學與生命", "第二外語", "生活技能", "自主學習" ]  # "請選擇", "所有通識"
+domain_106_text = [ "語言與文學", "藝術與美感", "哲學思維與道德推理", "公民素養與社會探究", "歷史與文化", "數學與邏輯思維", "科學與生命", "第二外語", "生活技能", "自主學習" ]  # "請選擇", "所有通識"
+domain_106_code = [ "00UG", "01UG", "02UG", "03UG", "04UG", "05UG", "06UG", "07UG", "08UG", "09UG" ]  # "0", "all"
+# domain_106_text2code = dict(zip(domain_106_text, domain_106_code))
+domain_106_code2text = dict(zip(domain_106_code, domain_106_text))
+# domain_106_code2id   = dict(zip(domain_106_code, list(range(len(domain_106_code)))))
 
-domain_code = [ "00UG", "01UG", "02UG", "03UG", "04UG", "05UG", "06UG", "07UG", "08UG", "09UG" ]  # "0", "all"
-
-# domain_text2code = dict(zip(domain_text, domain_code))
-domain_code2text = dict(zip(domain_code, domain_text))
-# domain_code2id   = dict(zip(domain_code, list(range(len(domain_code)))))
+domain_109_text = [ "人文藝術", "社會科學", "自然科學", "邏輯運算", "學院共同課程", "跨域專業探索課程", "大學入門", "專題探究", "MOOCs" ]  # "請選擇", "所有通識"
+domain_109_code = [ "A1UG", "A2UG", "A3UG", "A4UG", "B1UG", "B2UG", "B3UG", "C1UG", "C2UG" ]  # "0", "all"
+# domain_109_text2code = dict(zip(domain_109_text, domain_109_code))
+domain_109_code2text = dict(zip(domain_109_code, domain_109_text))
+# domain_109_code2id   = dict(zip(domain_109_code, list(range(len(domain_109_code)))))

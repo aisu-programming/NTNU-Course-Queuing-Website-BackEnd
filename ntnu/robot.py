@@ -71,13 +71,13 @@ def main_controller():
                     robot_logger.info(f"Main agent: Order from user '{user.student_id}' ({user.name}) of course {course.course_no} has vacancy!")
                     sub_agent = Agent(user.student_id, user.original_password)
                     robot_logger.info(f"Sub agent '{user.student_id}' ({user.name}): Taking course {course.course_no}!")
-                    result = sub_agent.take_course(course.course_no, order.domain)
+                    result = sub_agent.take_course(course.course_no, order.domain, sub_agent.user.year)
                     robot_logger.info(f"Sub agent '{user.student_id}' ({user.name}): Result of taking course {course.course_no}: {result}.")
 
                     if "儲存成功" in result:
                         order.update_status("successful")
                         sub_agent.line_notify(course)
-                    elif "衝堂" in result or "重複登記" in result or "性別限修" in result:
+                    elif "衝堂" in result or "重複登記" in result or "性別限修" in result or "失敗" in result:
                         order.update_status("pause", reason=result)
                         sub_agent.line_notify(course, successful=False, message=result)
 

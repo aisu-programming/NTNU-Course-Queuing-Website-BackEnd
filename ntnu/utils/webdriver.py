@@ -12,7 +12,7 @@ my_selenium_logger = logging.getLogger(name="selenium-wire")
 from PIL import Image
 from seleniumwire import webdriver
 
-from mapping import domain_code2text
+from mapping import domain_106_code2text, domain_109_code2text
 from exceptions import *
 from validation.model import model
 
@@ -266,12 +266,15 @@ def process_validate_code(validate_code):
 
 
 def login_course_taking_system(student_id, password, take_course=False,
-                               course_no=None, domain=None):
+                               course_no=None, domain=None, year=None):
 
     if take_course:
         assert course_no is not None
         assert domain    is not None
-        if domain != '': domain = domain_code2text[domain]
+        assert year      is not None
+        if domain != '':
+            if year >= 109: domain = domain_109_code2text[domain]
+            else          : domain = domain_106_code2text[domain]
 
     options = webdriver.ChromeOptions()
     # options.add_argument("--headless")
@@ -346,8 +349,8 @@ def login_course_taking_system(student_id, password, take_course=False,
                 wait_to_click(wait_and_find_element_by_id(driver, "button-1060-btnEl"))  # 「開課序號直接加選儲存」按鈕
 
                 # 如果是通識課：選領域
-                if domain in [ "語言與文學", "藝術與美感", "哲學思維與道德推理", "公民素養與社會探究",
-                            "歷史與文化", "數學與邏輯思維", "科學與生命", ]:
+                if domain in [ "語言與文學", "藝術與美感", "哲學思維與道德推理", "公民素養與社會探究", "歷史與文化",
+                               "數學與邏輯思維", "科學與生命", "人文藝術", "社會科學", "自然科學", "邏輯運算" ]:
                     wait_to_click(wait_and_find_element_by_id(driver, "domainType-inputEl"))  # 「選擇通識領域」下拉 bar 按鈕
                     wait_to_click(wait_domain_option_by_text(driver, domain))                 # 各領域選項
                     wait_to_click(wait_for_random_id_button(driver))                          # 「確認」按鈕

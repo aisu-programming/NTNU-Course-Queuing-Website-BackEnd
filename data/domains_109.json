@@ -1,0 +1,13 @@
+[
+    { "id":  0, "code": "0"   , "text": "請選擇" },
+    { "id":  1, "code": "A1UG", "text": "人文藝術" },
+    { "id":  2, "code": "A2UG", "text": "社會科學" },
+    { "id":  3, "code": "A3UG", "text": "自然科學" },
+    { "id":  4, "code": "A4UG", "text": "邏輯運算" },
+    { "id":  5, "code": "B1UG", "text": "學院共同課程" },
+    { "id":  6, "code": "B2UG", "text": "跨域專業探索課程" },
+    { "id":  7, "code": "B3UG", "text": "大學入門" },
+    { "id":  8, "code": "C1UG", "text": "專題探究" },
+    { "id":  9, "code": "C2UG", "text": "MOOCs" },
+    { "id": 10, "code": "all" , "text": "所有通識" }
+]

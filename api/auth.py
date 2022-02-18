@@ -76,7 +76,7 @@ def session(**kwargs):
             user = User(student_id, password)
             cookies = { "jwt": user.jwt }
             flask_logger.info(f"User '{student_id}' ({user.user.name}) has successfully logged in.")
-            return HTTPResponse("Success.", cookies=cookies)
+            return HTTPResponse("Success.", cookies=cookies, data={"year": user.user.year})
 
         except ValueError:
             flask_logger.warning(f"StudentIdNotExistException: IP '{kwargs['remote_addr']}' / User '{student_id}'")

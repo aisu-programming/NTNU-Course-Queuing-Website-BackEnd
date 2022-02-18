@@ -32,14 +32,17 @@ DOMAINS          = [ '', "00UG", "01UG", "02UG", "03UG", "04UG", "05UG", "06UG",
 
 
 ''' Functions '''
-def is_domain_invalid(course, domain_target):
-    if course.domains == 0 and domain_target == 0:
+def is_domain_invalid(course, domain_target, year):
+    if year >= 109: course_domains = course.domains_109
+    else          : course_domains = course.domains_106
+
+    if course_domains == 0 and domain_target == 0:
         return False
     else:
         domain = [ 0 ] * 10
         if domain_target != 0: domain[domain_target-1] = 1
         domain = int(''.join(str(d) for d in domain), base=2)
-        if course.domains & domain:
+        if course_domains & domain:
             return False
         else:
             return True
@@ -79,7 +82,7 @@ def order(user):
                 course = CourseObject.query.filter_by(course_no=change[COURSE_NO]).first()
                 if course is None:
                     raise DataIncorrectException("data contains nonexistent courseNo.")
-                if is_domain_invalid(course, change[DOMAIN]):
+                if is_domain_invalid(course, change[DOMAIN], user.user.year):
                     raise DataIncorrectException("data contains invalid domain option.")
             courseNos_list = [ change[COURSE_NO] for change in changes ]
             courseNos_set  = set(courseNos_list)

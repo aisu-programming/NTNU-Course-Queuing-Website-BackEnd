@@ -151,8 +151,8 @@ class Agent(User):
             # 尚未切換到「加選」頁面
             if not self.add_course_page:
                 my_selenium_logger.info(f"Agent '{self.student_id}' ({self.user.name}) switching to add course page.")
-                # self.__switch_to_add_course_page()
-                self.__switch_to_query_course_page()
+                self.__switch_to_add_course_page()
+                # self.__switch_to_query_course_page()
                 if not self.add_course_page:
                     raise RobotStuckException(f"Agent '{self.student_id}' ({self.user.name}) can't switch to add course page succesfully.")
             return function(self, *args, **kwargs)
@@ -179,10 +179,10 @@ class Agent(User):
         return bool(json.loads(response.text.replace("'", '"'))["Count"])
 
     # 加選課程
-    def take_course(self, course_no, domain):
+    def take_course(self, course_no, domain, year):
         return login_course_taking_system(
             self.student_id, self.password, take_course=True,
-            course_no=course_no, domain=domain,
+            course_no=course_no, domain=domain, year=year,
         )
 
     # # 加選課程
@@ -285,11 +285,11 @@ class Agent(User):
     #         self.set_cookie()
     #     if not self.add_course_page:
     #         self.__switch_to_add_course_page()
-    #     payload = "limit=999999&page=1&start=0"
+    #     payload = "action=showGrid&actionButton=query"
     #     for i in range(3):
     #         print(f"Send {i+1} time")
     #         r = self.__post(NTNU_COURSE_QUERY_URL, data=payload)
     #         if r.text == '': time.sleep(3)
     #         else           : break
     #     if r.text == '': return {}
-    #     else           : return r.json()
+    #     else           : return r.text

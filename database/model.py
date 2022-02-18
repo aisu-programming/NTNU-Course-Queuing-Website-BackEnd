@@ -10,7 +10,7 @@ from sqlalchemy.dialects.mysql import \
     TINYINT, SMALLINT, CHAR, VARCHAR, \
     FLOAT, BINARY, BIT, DATETIME, ENUM, JSON
 
-from mapping import department_code2id, department_code2text, domain_text, domain_code2text
+from mapping import department_code2id, department_code2text, domain_106_text, domain_109_text, domain_106_code2text, domain_109_code2text
 from database.utils import AES_encode, AES_decode, process_time_info
 
 
@@ -21,7 +21,7 @@ db = SQLAlchemy()
 
 class Connection(db.Model):
     __tablename__ = 'connections'
-    id          = Column(TINYINT(unsigned=True), primary_key=True)
+    id          = Column(SMALLINT(unsigned=True), primary_key=True)
     target      = Column(VARCHAR(39), nullable=False, unique=True)  # Length of IPv6 = 39
     target_type = Column(ENUM("IP", "student_id"), nullable=False)
     banned_turn = Column(TINYINT, default=0)
@@ -62,16 +62,16 @@ class Connection(db.Model):
 class UserObject(db.Model):
 # class UserObject(Base):
     __tablename__ = 'users'
-    id                      = Column(TINYINT(unsigned=True), primary_key=True)
-    student_id              = Column(CHAR(9),     nullable=False, unique=True)
-    password                = Column(BINARY(48),  nullable=False)
-    name                    = Column(VARCHAR(10), nullable=False)
-    major                   = Column(VARCHAR(4),  nullable=False)
-    level                   = Column(TINYINT,     default=1)
-    order_limit             = Column(TINYINT,     default=10)  # Activate orders limitation
+    id                      = Column(SMALLINT(unsigned=True), primary_key=True)
+    student_id              = Column(CHAR(9),    unique=True, nullable=False)
+    password                = Column(BINARY(48),              nullable=False)
+    name                    = Column(VARCHAR(10),             nullable=False)
+    major                   = Column(VARCHAR(4),              nullable=False)
+    year                    = Column(TINYINT(unsigned=True),  nullable=False)
+    level                   = Column(TINYINT, default=1)
+    order_limit             = Column(TINYINT, default=10)  # Activate orders limitation
     major_2                 = Column(VARCHAR(4))
     minor                   = Column(VARCHAR(4))
-    # grade                   = Column(TINYINT(unsigned=True))
     line_uid                = Column(VARCHAR(40))  # 33
     search_department_turns = Column(JSON)
 
@@ -86,6 +86,7 @@ class UserObject(db.Model):
         self.minor      = minor
 
     def register(self):
+        self.year = 100 + int(self.student_id[1:3])
         self.search_department_turns = [ 0 ] * 170
         self.search_department_turns[department_code2id[self.major] + 1] = 1
         db.session.add(self)
@@ -141,13 +142,16 @@ class CourseObject(db.Model):
     # place: 3 bits (本部, 公館, 其他)
     place        = Column(BIT(3),       nullable=False)
     teacher      = Column(VARCHAR(50),  nullable=False)
-    # domains: 10 bits ("00UG", "01UG", "02UG", "03UG", "04UG", "05UG", "06UG", "07UG", "08UG", "09UG")
-    domains      = Column(BIT(10),       nullable=False)
+    # domains_106: 10 bits ("00UG", "01UG", "02UG", "03UG", "04UG", "05UG", "06UG", "07UG", "08UG", "09UG")
+    domains_106  = Column(BIT(10),      nullable=False)
+    # domains_109: 9 bits ("A1UG", "A2UG", "A3UG", "A4UG", "B1UG", "B2UG", "B3UG", "C1UG", "C2UG")
+    # Hot fix so using 10 bits temporary
+    domains_109  = Column(BIT(10),      nullable=False)
 
     def __init__(
         self, course_no, course_code, chinese_name, english_name,
         credit, department, department_1, department_2, department_3,
-        time_info, time_1, time_2, place, teacher, domains
+        time_info, time_1, time_2, place, teacher, domains_106, domains_109
     ):
         self.course_no    = course_no
         self.course_code  = course_code
@@ -163,7 +167,8 @@ class CourseObject(db.Model):
         self.time_2       = time_2
         self.place        = place
         self.teacher      = teacher
-        self.domains      = domains
+        self.domains_106  = domains_106
+        self.domains_109  = domains_109
 
     def register(self):
         db.session.add(self)
@@ -171,7 +176,11 @@ class CourseObject(db.Model):
         return
 
     @property
-    def json(self):
+    def json(self, grade=4):
+        if grade >= 109:
+            domains = self.domains_109
+        else:
+            domains = self.domains_106
         return {
             "courseNo"   : self.course_no,
             "courseCode" : self.course_code,
@@ -180,18 +189,19 @@ class CourseObject(db.Model):
             "department" : department_code2text[self.department],
             "timeInfo"   : self.time_info,
             "teacher"    : self.teacher,
-            "domains"    : self.domains,
+            "domains"    : domains,
         }
 
 
 class OrderObject(db.Model):
     __tablename__ = 'orders'
-    id                = Column(TINYINT(unsigned=True), primary_key=True)
-    user_id           = Column(TINYINT(unsigned=True), ForeignKey('users.id'), nullable=False)
-    course_id         = Column(SMALLINT(unsigned=True), ForeignKey('courses.id'), nullable=False)
+    id                = Column(SMALLINT(unsigned=True), primary_key=True)
+    user_id           = Column(SMALLINT(unsigned=True), nullable=False)
+    course_id         = Column(SMALLINT(unsigned=True), nullable=False)
+    # user_id           = Column(SMALLINT(unsigned=True), ForeignKey('users.id'), nullable=False)
+    # course_id         = Column(SMALLINT(unsigned=True), ForeignKey('courses.id'), nullable=False)
     status            = Column(ENUM("activate", "pause", "successful"), nullable=False)
-    domain            = Column(ENUM('', "00UG", "01UG", "02UG", "03UG", "04UG",
-                                    "05UG", "06UG", "07UG", "08UG", "09UG"), default='')
+    domain            = Column(VARCHAR(4), default='')
     activate_time     = Column(DATETIME)
     last_update_time  = Column(DATETIME, onupdate=datetime.now, default=datetime.now)
     pause_reason      = Column(TINYINT(unsigned=True), default=0)
@@ -220,6 +230,8 @@ class OrderObject(db.Model):
                 self.pause_reason = 1
             elif "重複登記" in reason:
                 self.pause_reason = 2
+            elif "性別限修" in reason:
+                self.pause_reason = 3
         db.session.commit()
         return
 
@@ -235,7 +247,14 @@ class OrderObject(db.Model):
 
     @property
     def json(self):
-        course = CourseObject.query.filter_by(id=self.course_id).first()
+        user    = UserObject.query.filter_by(id=self.user_id).first()
+        course  = CourseObject.query.filter_by(id=self.course_id).first()
+        if user.year >= 109:
+            domains = course.domains_109
+            domain = domain_109_code2text[self.domain] if self.domain != '' else ''
+        else:
+            domains = course.domains_106
+            domain = domain_106_code2text[self.domain] if self.domain != '' else ''
         return {
             "courseNo"   : course.course_no,
             "chineseName": course.chinese_name,
@@ -243,9 +262,9 @@ class OrderObject(db.Model):
             "department" : department_code2text[course.department],
             "timeInfo"   : course.time_info,
             "teacher"    : course.teacher,
-            "domains"    : course.domains,
+            "domains"    : domains,
             "status"     : self.status,
-            "domain"     : domain_code2text[self.domain] if self.domain != '' else '',
+            "domain"     : domain,
             "pauseReason": self.pause_reason,
         }
 
@@ -264,19 +283,30 @@ class OrderObject(db.Model):
 
 def import_courses():
     ROOT_PATH = os.environ.get("ROOT_PATH")
-    with open(f"{ROOT_PATH}/data/courses_2022-2.json", encoding="utf-8") as json_file:
-        courses = json.load(json_file)["List"]
-        
+    with open(f"{ROOT_PATH}/data/courses_2022-2_106.json", encoding="utf-8") as json_file_106:
+        courses_106 = json.load(json_file_106)["List"]
+    courses_106 = sorted(courses_106, key=lambda c: int(c["serialNo"]))
+    with open(f"{ROOT_PATH}/data/courses_2022-2_109.json", encoding="utf-8") as json_file_109:
+        courses_109 = json.load(json_file_109)["List"]
+    courses_109 = sorted(courses_109, key=lambda c: int(c["serialNo"]))
+    
+    # Merge 106 & 109 course
+    for ci in range(len(courses_106)):
+        courses_106[ci]["v_chn_name_106"] = courses_106[ci]["v_chn_name"]
+        courses_106[ci]["v_chn_name_109"] = courses_109[ci]["v_chn_name"]
+
+    courses = courses_106
     for course in tqdm(courses, desc="Importing course", ascii=True):
-        course_no    = course["serialNo"]
-        course_code  = course["courseCode"]
-        chinese_name = course["chnName"]
-        english_name = course["engName"]
-        credit       = course["credit"]
-        dept_code    = course["deptCode"]
-        time_info    = course["timeInfo"]
-        teacher      = course["teacher"]
-        v_chn_name   = course["v_chn_name"]
+        course_no      = course["serialNo"]
+        course_code    = course["courseCode"]
+        chinese_name   = course["chnName"]
+        english_name   = course["engName"]
+        credit         = course["credit"]
+        dept_code      = course["deptCode"]
+        time_info      = course["timeInfo"]
+        teacher        = course["teacher"]
+        v_chn_name_106 = course["v_chn_name_106"]
+        v_chn_name_109 = course["v_chn_name_109"]
         # eng_teaching    = course["engTeach"]
         # limit_count     = course["limitCountH"]
         # authorize_count = course["authorizeP"]
@@ -289,15 +319,19 @@ def import_courses():
         department_2 = int(''.join(str(s) for s in department[ 64:128]), base=2)
         department_3 = int(''.join(str(s) for s in department[128:   ]), base=2)
         time_1, time_2, place = process_time_info(time_info)
-        domains = [ 0 ] * 10
-        for dti, dt in enumerate(domain_text):
-            if dt in v_chn_name: domains[dti] = 1
-        domains = int(''.join(str(d) for d in domains), base=2)
+        domains_106 = [ 0 ] * 10
+        domains_109 = [ 0 ] * 10
+        for dti, dt in enumerate(domain_106_text):
+            if dt in v_chn_name_106: domains_106[dti] = 1
+        for dti, dt in enumerate(domain_109_text):
+            if dt in v_chn_name_109: domains_109[dti] = 1
+        domains_106 = int(''.join(str(d) for d in domains_106), base=2)
+        domains_109 = int(''.join(str(d) for d in domains_109), base=2)
         
         CourseObject(
             course_no, course_code, chinese_name, english_name, credit,
             dept_code, department_1, department_2, department_3,
-            time_info, time_1, time_2, place, teacher, domains
+            time_info, time_1, time_2, place, teacher, domains_106, domains_109
         ).register()
         
     print('')
