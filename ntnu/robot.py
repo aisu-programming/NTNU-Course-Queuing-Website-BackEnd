@@ -55,8 +55,12 @@ def main_controller():
 
             user_based_orders = get_user_based_orders()
             user_order = user_based_orders[user_counter % len(user_based_orders)]
+            robot_logger.info(f"Now search_turn: {search_turn}, user_counter: {user_counter % len(user_based_orders)} / {len(user_based_orders)}")
 
             if len(user_order["orders"]) > 0:
+
+                # robot_logger.info(f"user_order['orders'] = {user_order['orders']}")
+
                 order  = user_order["orders"][search_turn % len(user_order["orders"])]
                 user   = user_order["user"]
                 course = CourseObject.query.filter_by(id=order.course_id).first()
@@ -73,7 +77,7 @@ def main_controller():
                     if "儲存成功" in result:
                         order.update_status("successful")
                         sub_agent.line_notify(course)
-                    elif "衝堂" in result or "重複登記" in result:
+                    elif "衝堂" in result or "重複登記" in result or "性別限修" in result:
                         order.update_status("pause", reason=result)
                         sub_agent.line_notify(course, successful=False, message=result)
 
@@ -82,7 +86,8 @@ def main_controller():
             user_counter += 1
             
             if user_counter == len(user_based_orders):
-                search_turn += 1
+                user_counter = 0
+                search_turn  += 1
             
         else:
             time.sleep(SLEEP_TIME)

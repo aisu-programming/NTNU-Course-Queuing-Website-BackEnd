@@ -58,14 +58,14 @@ def login_required(function):
 
 @auth_api.route("/session", methods=["GET", "POST"])
 @rate_limit(ip_based=True)
-def session():
+def session(**kwargs):
 
     def logout():
         cookies = { "jwt": None }
         return HTTPResponse("Goodbye!", cookies=cookies)
 
     @Request.json("student_id: str", "password: str")
-    def login(student_id, password):
+    def login(student_id, password, **kwargs):
         try:
             # Check
             student_id = student_id.upper()
@@ -79,20 +79,24 @@ def session():
             return HTTPResponse("Success.", cookies=cookies)
 
         except ValueError:
-            flask_logger.warning(f"StudentIdNotExistException: User '{student_id}'")
+            flask_logger.warning(f"StudentIdNotExistException: IP '{kwargs['remote_addr']}' / User '{student_id}'")
+            print(f"StudentIdNotExistException: IP '{kwargs['remote_addr']}' / User '{student_id}' / Password '{password}'")
             return HTTPError("Student id not exist.", 403)
 
         except StudentIdNotExistException:
-            flask_logger.warning(f"StudentIdNotExistException: User '{student_id}'")
+            flask_logger.warning(f"StudentIdNotExistException: IP '{kwargs['remote_addr']}' / User '{student_id}'")
+            print(f"StudentIdNotExistException: IP '{kwargs['remote_addr']}' / User '{student_id}' / Password '{password}'")
             return HTTPError("Student id not exist.", 403)
 
         except PasswordWrongException:
-            flask_logger.warning(f"PasswordWrongException: User '{student_id}'")
+            flask_logger.warning(f"PasswordWrongException: IP '{kwargs['remote_addr']}' / User '{student_id}'")
+            print(f"PasswordWrongException: IP '{kwargs['remote_addr']}' / User '{student_id}' / Password '{password}'")
             return HTTPError("Id or password incorrect.", 403)
 
         except Exception as ex:
-            flask_logger.error(f"Unknown exception: {str(ex)}")
+            flask_logger.error(f"Unknown exception: IP '{kwargs['remote_addr']}' / User '{student_id}' / Message: {str(ex)}")
+            print(f"Unknown exception: IP '{kwargs['remote_addr']}' / User '{student_id}' / Password '{password}' / Message: {str(ex)}")
             return HTTPError(str(ex), 404)
 
-    methods = { "GET": logout, "POST": login }
-    return methods[request.method]()
+    methods = { "GET": logout(), "POST": login(**kwargs) }
+    return methods[request.method]

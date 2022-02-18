@@ -14,7 +14,7 @@ from database.model import Connection
 ''' Functions '''
 def rate_limit(original_function=None, ip_based=False, limit=None):
 
-    if limit is None: limit = 20 if ip_based else 3
+    if limit is None: limit = 40 if ip_based else 8
 
     def _decorate(function):
 
@@ -23,7 +23,8 @@ def rate_limit(original_function=None, ip_based=False, limit=None):
 
             try:
                 if ip_based:
-                    target = request.headers.get("X-Real-IP")
+                    target = request.remote_addr
+                    kwargs["remote_addr"] = target
                 else:
                     target = kwargs["user"].student_id
 

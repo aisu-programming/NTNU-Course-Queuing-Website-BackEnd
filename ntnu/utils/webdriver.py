@@ -91,6 +91,20 @@ def wait_to_click(element):
     raise SeleniumStuckException
 
 
+def wait_2_buttons_to_click(driver, id_1, id_2):
+    for _ in range(50):
+        try:
+            driver.find_element_by_id(id_1).click()
+        except:
+            pass
+        try:
+            driver.find_element_by_id(id_2).click()
+            return
+        except:
+            time.sleep(0.2)
+    raise SeleniumStuckException
+
+    
 # def wait_for_url(driver, url_content):
 #     for _ in range(20):
 #         time.sleep(0.25)
@@ -98,8 +112,20 @@ def wait_to_click(element):
 #     raise SeleniumStuckException
 
 
-def wait_and_find_element_by_id(driver, id):
-    for _ in range(25):
+# def wait_and_find_element_by_id(driver, id, fast=False):
+#     wait_turn = 10 if fast else 25
+#     for _ in range(wait_turn):
+#         try:
+#             element = driver.find_element_by_id(id)
+#             return element
+#         except:
+#             time.sleep(0.2)
+#     raise SeleniumStuckException
+
+
+def wait_and_find_element_by_id(driver, id, fast=False):
+    wait_turn = 10 if fast else 25
+    for _ in range(wait_turn):
         try:
             element = driver.find_element_by_id(id)
             return element
@@ -206,7 +232,7 @@ def wait_for_validate_code_button(driver, button):
 
 
 def wait_for_validate_code_img(driver):
-    for _ in range(5):
+    for _ in range(10):
         for request in reversed(driver.requests):
             if "RandImage" in request.url:
                 if request.response == None:
@@ -293,16 +319,12 @@ def login_course_taking_system(student_id, password, take_course=False,
         wait_to_click(wait_and_find_element_by_id(driver, "redoValidateCodeButton-btnEl"))  # 「重新產生」按鈕
 
 
-    try:
-        wait_to_click(wait_and_find_element_by_id(driver, "button-1005-btnEl"))  # 教程學生的「OK」按鈕
-    except:
-        pass
-    wait_to_click(wait_and_find_element_by_id(driver, "button-1017-btnEl"))  # 「下一頁」按鈕
+    wait_2_buttons_to_click(driver, "button-1005-btnEl", "button-1017-btnEl")  # 教程學生的「OK」按鈕、「下一頁」按鈕
+    # wait_to_click(wait_and_find_element_by_id(driver, "redoValidateCodeButton-btnEl"))  # 碩士生「OK」按鈕
     name  = wait_and_find_element_by_id(driver, "panel-1011-innerCt").find_elements("tag name", "font")[1].text
     major = wait_and_find_element_by_id(driver, "panel-1012-innerCt").find_elements("tag name", "font")[1].text.split(' ')[0]
-    wait_and_find_element_by_id(driver, "now")
-    driver.execute_script("document.getElementById('now').parentElement.remove()")  # 移除計時器
-    driver.switch_to.frame(wait_and_find_element_by_id(driver, "stfseldListDo"))
+    # wait_and_find_element_by_id(driver, "now")
+    # driver.execute_script("document.getElementById('now').parentElement.remove()")  # 移除計時器
 
     if not take_course:
         cookies = driver.get_cookies()[0]
@@ -310,6 +332,7 @@ def login_course_taking_system(student_id, password, take_course=False,
         return cookies, name, major
     
     else:
+        driver.switch_to.frame(wait_and_find_element_by_id(driver, "stfseldListDo"))
         wait_to_click(wait_and_find_element_by_id(driver, "add-btnEl"))  # 「加選」按鈕
         wait_and_find_element_by_id(driver, "serialNo-inputEl").send_keys(course_no)
 

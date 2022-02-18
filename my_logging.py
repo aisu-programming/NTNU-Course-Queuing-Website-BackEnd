@@ -32,7 +32,7 @@ flask_logger.addHandler(flask_file_handler)
 robot_logger = logging.getLogger(name="robot")
 robot_file_handler = logging.FileHandler(f"{log_dir}/robot.log")
 robot_file_handler.setFormatter(log_formater)
-robot_logger.addHandler(flask_file_handler)
+robot_logger.addHandler(robot_file_handler)
 
 selenium_logger = logging.getLogger(name="seleniumwire.handler")
 selenium_logger.setLevel(logging.WARNING)

@@ -12,14 +12,18 @@ os.environ["ROOT_PATH"] = os.path.dirname(os.path.abspath(__file__))
 ''' Libraries '''
 # Flask
 from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 from api.auth import auth_api
 from api.line import line_api
 from api.order import order_api
 from api.course import course_api
 from database.model import db
 from database.model import CourseObject, import_courses
+
 # Robot
 import threading
+
 from ntnu.robot import main_controller
 
 
@@ -35,6 +39,7 @@ DB_NAME     = os.environ.get("DB_NAME")
 ''' Settings '''
 from my_logging import *
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 # app.config['DEBUG'] = True
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
