@@ -246,13 +246,23 @@ class Agent(User):
     #     # 輸出網頁回傳結果內容
     #     return r
 
-    # 透過 LINE 通知搶課成功
-    def line_notify(self, course):
+    # 透過 LINE 通知
+    def line_notify(self, course, successful=True, message=None):
         if self.user.line_uid is not None:
-            message = f"{self.user.name}，恭喜你排到課程: \n" + \
-                      f"- 課程序號: {course.course_no}\n" + \
-                      f"- 課程名稱: {course.chinese_name}\n" + \
-                      f"- 時間地點: {course.time_info}"
+
+            if successful:
+                message = f"{self.user.name}，恭喜你排到課程: \n" + \
+                        f"- 課程序號: {course.course_no}\n" + \
+                        f"- 課程名稱: {course.chinese_name}\n" + \
+                        f"- 時間地點: {course.time_info}"
+            else:
+                assert message is not None
+                message = f"{self.user.name}，刷課時發生錯誤，因此已暫停該筆選課: \n" + \
+                        f"- 課程序號: {course.course_no}\n" + \
+                        f"- 課程名稱: {course.chinese_name}\n" + \
+                        f"- 時間地點: {course.time_info}\n" + \
+                        f"- 錯誤內容: {message}"
+
             r = requests.post(
                 "https://api.line.me/v2/bot/message/push",
                 headers={
