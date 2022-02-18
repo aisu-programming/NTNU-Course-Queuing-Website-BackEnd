@@ -176,12 +176,9 @@ class CourseObject(db.Model):
         db.session.commit()
         return
 
-    @property
-    def json(self, grade=4):
-        if grade >= 109:
-            domains = self.domains_109
-        else:
-            domains = self.domains_106
+    def json(self, year=109):
+        if year >= 109: domains = self.domains_109
+        else          : domains = self.domains_106
         return {
             "courseNo"   : self.course_no,
             "courseCode" : self.course_code,

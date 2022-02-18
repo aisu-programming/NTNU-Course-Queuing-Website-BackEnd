@@ -64,9 +64,12 @@ def activate_robot():
 threading.Thread(target=activate_robot, name="Main Controller", daemon=True).start()
 
 
-@app.route("/")
-def hello_world():
-    return f"<p>Hello world!</p>"
+# @app.route("/")
+# @app.route("/search")
+# @app.route("/login")
+# @app.route("/rushlist/wait")
+# def hello_world():
+#     return f"<p>修復中... 請耐心等候 QQ...<br/>等修復好了之後還請大家再重選一次課... 真的很對不起... Orz</p>"
 
 
 # @app.before_first_request

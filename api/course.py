@@ -140,13 +140,13 @@ def search_courses(course_no, course_name, departments, domains,
                     else:
                         courses = courses.filter(CourseObject.domains_106.op('&')(domains))
                 else:
-                    courses = courses.filter(or_(
-                        CourseObject.domains_109.op('&')(domains),
-                        CourseObject.domains_106.op('&')(domains)
-                    ))
+                    courses = courses.filter(CourseObject.domains_109.op('&')(domains))
+
         
         if courses != []: courses = courses.all()
-        courses = sorted([ c.json for c in courses ], key=lambda c: c["courseNo"])
+        if user is not None: courses = [ c.json(user.user.year) for c in courses ]
+        else               : courses = [ c.json()               for c in courses ]
+        courses = sorted(courses, key=lambda c: c["courseNo"])
         for ci in range(len(courses)):
             courses[ci]["isOrdered"] = False
 
