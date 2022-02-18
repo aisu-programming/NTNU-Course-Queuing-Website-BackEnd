@@ -27,7 +27,8 @@ ACTIVATE         = "activate"
 PAUSE            = "pause"
 DELETE           = "delete"
 STATUS           = [ ACTIVATE, PAUSE, DELETE ]
-DOMAINS          = [ '', "00UG", "01UG", "02UG", "03UG", "04UG", "05UG", "06UG", "07UG", "08UG", "09UG" ]
+DOMAINS_106      = [ '', "00UG", "01UG", "02UG", "03UG", "04UG", "05UG", "06UG", "07UG", "08UG", "09UG" ]
+DOMAINS_109      = [ '', "A1UG", "A2UG", "A3UG", "A4UG", "B1UG", "B2UG", "B3UG", "C1UG", "C2UG" ]
 
 
 
@@ -58,7 +59,7 @@ def order(user):
             orders = [ order.json for order in user.orders ]
             return HTTPResponse("Success.", data={"orders": orders})
         except Exception as ex:
-            flask_logger.error(f"Unknown exception: {str(ex)}")
+            flask_logger.error(f"User '{user.student_id}' ({user.user.name}): Unknown exception: {str(ex)}")
             return HTTPError(str(ex), 404)
 
     @Request.json("changes: list")
@@ -67,27 +68,27 @@ def order(user):
             # check
             for change in changes:
                 if list(change.keys()) != [ COURSE_NO_BEFORE, ACTION, DOMAIN ]:
-                    raise DataIncorrectException("data form invalid.")
+                    raise DataIncorrectException(f"User '{user.student_id}' ({user.user.name}): data form invalid.")
                 change[COURSE_NO] = change[COURSE_NO_BEFORE]
                 del change[COURSE_NO_BEFORE]
                 if type(change[COURSE_NO]) != str or type(change[ACTION]) != int or type(change[DOMAIN]) != int:
-                    raise DataIncorrectException("data contains invalid data type.")
+                    raise DataIncorrectException(f"User '{user.student_id}' ({user.user.name}): data contains invalid data type.")
                 # action: 0 = ACTIVATE, 1 = PAUSE, 2 = DELETE
                 if change[ACTION] not in [ 0, 1, 2 ]:
-                    raise DataIncorrectException("data contains invalid action option.")
+                    raise DataIncorrectException(f"User '{user.student_id}' ({user.user.name}): data contains invalid action option.")
                 if change[DOMAIN] not in [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]:
-                    raise DataIncorrectException("data contains invalid domain option.")
+                    raise DataIncorrectException(f"User '{user.student_id}' ({user.user.name}): data contains invalid domain option.")
                 if len(change[COURSE_NO]) != 4:
-                    raise DataIncorrectException("data contains courseNo with incorrect form.")
+                    raise DataIncorrectException(f"User '{user.student_id}' ({user.user.name}): data contains courseNo with incorrect form.")
                 course = CourseObject.query.filter_by(course_no=change[COURSE_NO]).first()
                 if course is None:
-                    raise DataIncorrectException("data contains nonexistent courseNo.")
+                    raise DataIncorrectException(f"User '{user.student_id}' ({user.user.name}): data contains nonexistent courseNo.")
                 if is_domain_invalid(course, change[DOMAIN], user.user.year):
-                    raise DataIncorrectException("data contains invalid domain option.")
+                    raise DataIncorrectException(f"User '{user.student_id}' ({user.user.name}): data contains invalid domain option.")
             courseNos_list = [ change[COURSE_NO] for change in changes ]
             courseNos_set  = set(courseNos_list)
             if len(courseNos_list) != len(courseNos_set):
-                raise DataIncorrectException("data contains duplicate courseNo.")
+                raise DataIncorrectException(f"User '{user.student_id}' ({user.user.name}): data contains duplicate courseNo.")
             changes = sorted(changes, key=lambda c: c[ACTION], reverse=True)
 
             # Update
@@ -98,7 +99,10 @@ def order(user):
             for change in changes:
                 course = CourseObject.query.filter_by(course_no=change[COURSE_NO]).first()
                 status_target = STATUS[change[ACTION]]
-                domain_target = DOMAINS[change[DOMAIN]]
+                if user.user.year >= 109:
+                    domain_target = DOMAINS_109[change[DOMAIN]]
+                else:
+                    domain_target = DOMAINS_106[change[DOMAIN]]
 
                 # OrderObject exist: update it
                 if course.id in orders_course_ids:

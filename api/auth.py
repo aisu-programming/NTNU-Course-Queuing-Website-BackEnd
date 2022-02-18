@@ -74,7 +74,7 @@ def session(**kwargs):
             _ = int(student_id[:-1])
 
             user = User(student_id, password)
-            cookies = { "jwt": user.jwt }
+            cookies = { "jwt": user.jwt, "year": str(user.user.year) }
             flask_logger.info(f"User '{student_id}' ({user.user.name}) has successfully logged in.")
             return HTTPResponse("Success.", cookies=cookies, data={"year": user.user.year})
 

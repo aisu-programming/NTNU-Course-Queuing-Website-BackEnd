@@ -153,6 +153,7 @@ class CourseObject(db.Model):
         credit, department, department_1, department_2, department_3,
         time_info, time_1, time_2, place, teacher, domains_106, domains_109
     ):
+        self.id           = int(course_no)
         self.course_no    = course_no
         self.course_code  = course_code
         self.chinese_name = chinese_name
@@ -204,7 +205,7 @@ class OrderObject(db.Model):
     domain            = Column(VARCHAR(4), default='')
     activate_time     = Column(DATETIME)
     last_update_time  = Column(DATETIME, onupdate=datetime.now, default=datetime.now)
-    pause_reason      = Column(TINYINT(unsigned=True), default=0)
+    pause_reason      = Column(VARCHAR(50))
 
     def __init__(self, user_id, course_id, status, domain=''):
         self.user_id   = user_id
@@ -219,19 +220,12 @@ class OrderObject(db.Model):
         db.session.commit()
         return
 
-    def update_status(self, status, reason=None):
+    def update_status(self, status, reason=''):
         self.status = status
         if status == "activate":
             self.activate_time = datetime.now()
         elif status == "pause":
-            if reason is None:
-                self.pause_reason = 0
-            elif "衝堂" in reason:
-                self.pause_reason = 1
-            elif "重複登記" in reason:
-                self.pause_reason = 2
-            elif "性別限修" in reason:
-                self.pause_reason = 3
+            self.pause_reason = reason
         db.session.commit()
         return
 
