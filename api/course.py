@@ -120,7 +120,7 @@ def search_courses(course_no, course_name, departments, domains,
                 ))
             if teacher != "":
                 courses = courses.filter(CourseObject.teacher.contains(teacher))
-            if times_1 != 0 and times_2 != 0:
+            if times_1 != 0 or times_2 != 0:
                 if precise:
                     courses = courses.filter(and_(
                         CourseObject.time_1.op('|')(times_1)==times_1,
