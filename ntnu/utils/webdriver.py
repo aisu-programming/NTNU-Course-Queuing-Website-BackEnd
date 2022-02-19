@@ -263,7 +263,7 @@ def login_course_taking_system(student_id, password, take_course=False,
             else          : domain = domain_106_code2text[domain]
 
     options = webdriver.ChromeOptions()
-    # options.add_argument("--headless")
+    if not take_course: options.add_argument("--headless")
     driver = webdriver.Chrome(WEBDRIVER_PATH, options=options)
     driver.get(NTNU_LOGIN_CHECK_URL)
 
@@ -332,10 +332,8 @@ def login_course_taking_system(student_id, password, take_course=False,
                 wait_to_click(wait_and_find_element_by_id(driver, "button-1060-btnEl"), take_course)  # 「開課序號直接加選儲存」按鈕
 
                 # 如果是通識課：選領域
-                try:
-                    bar = wait_and_find_element_by_id(driver, "domainType-inputEl")
-                except:
-                    bar = None
+                try   : bar = wait_and_find_element_by_id(driver, "domainType-inputEl")
+                except: bar = None
                 if bar is not None:
                     # Hot fix for 97~105 domains
                     if year <= 105 and domain == "語言與文學":

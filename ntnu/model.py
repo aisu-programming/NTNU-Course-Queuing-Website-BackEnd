@@ -17,9 +17,11 @@ from ntnu.utils.webdriver import NTNU_WEBSITE_HOST, NTNU_COURSE_QUERY_URL
 
 
 ''' Parameters '''
-JWT_SECRET = os.environ.get("JWT_SECRET")
-JWT_ISSUER = os.environ.get("JWT_ISSUER")
-JWT_EXPIRE = timedelta(days=int(os.environ.get("JWT_EXPIRE")))
+JWT_SECRET  = os.environ.get("JWT_SECRET")
+JWT_ISSUER  = os.environ.get("JWT_ISSUER")
+JWT_EXPIRE  = timedelta(days=int(os.environ.get("JWT_EXPIRE")))
+
+LINE_BEARER = os.environ.get("LINE_BEARER")
 
 
 
@@ -267,7 +269,7 @@ class Agent(User):
                 "https://api.line.me/v2/bot/message/push",
                 headers={
                     "Content-Type" : "application/json",
-                    "Authorization": "Bearer 7MwRTwXx3QP1AD7m5Ifpom8mUP2JQp+Yz+jr4nW+4Q3kuuh+o72XdtQtjuSkzZfF+oy2BbD528MHG7LHRBSImwmhg+w2tXNrH0T0L0CU1T88uS1+f1kaSmKgNHI+bi0zTtf+SZk/0ynAGaMII0f8KQdB04t89/1O/w1cDnyilFU="
+                    "Authorization": f"Bearer {LINE_BEARER}"
                 },
                 data=json.dumps({
                     "to"      : self.user.line_uid,
