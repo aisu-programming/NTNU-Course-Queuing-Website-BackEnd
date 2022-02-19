@@ -12,8 +12,9 @@ from datetime import datetime, timedelta
 from mapping import department_text2code
 from exceptions import RobotStuckException
 from database.model import UserObject, OrderObject
-from ntnu.utils.webdriver import login_course_taking_system, login_iportal
+from ntnu.utils.webdriver import send_to_ip_protector, login_course_taking_system, login_iportal
 from ntnu.utils.webdriver import NTNU_WEBSITE_HOST, NTNU_COURSE_QUERY_URL
+
 
 
 ''' Parameters '''
@@ -173,9 +174,11 @@ class Agent(User):
                     "notFull"     : 1,
                 }
             )
-            if len(response.text) != 0:
-                time.sleep(3)
+            if response.ok and len(response.text) != 0:
                 break
+            time.sleep(1)
+        if not response.ok:
+            raise RobotStuckException(f"Function: check_course get a response {response.status_code}.")
         if len(response.text) == 0:
             raise RobotStuckException("Function: check_course can't get normal response.")
         return bool(json.loads(response.text.replace("'", '"'))["Count"])

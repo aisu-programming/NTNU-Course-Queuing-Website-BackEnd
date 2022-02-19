@@ -34,6 +34,11 @@ robot_file_handler = logging.FileHandler(f"{log_dir}/robot.log")
 robot_file_handler.setFormatter(log_formater)
 robot_logger.addHandler(robot_file_handler)
 
+ip_protector_logger = logging.getLogger(name="ip_protector")
+ip_protector_file_handler = logging.FileHandler(f"{log_dir}/ip_protector.log")
+ip_protector_file_handler.setFormatter(log_formater)
+ip_protector_logger.addHandler(ip_protector_file_handler)
+
 selenium_logger = logging.getLogger(name="seleniumwire.handler")
 selenium_logger.setLevel(logging.WARNING)
 

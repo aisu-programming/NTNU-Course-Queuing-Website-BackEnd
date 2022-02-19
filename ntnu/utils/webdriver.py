@@ -4,6 +4,7 @@ import os
 import json
 import time
 import logging
+import requests
 my_selenium_logger = logging.getLogger(name="selenium-wire")
 import winsound
 # import requests
@@ -15,10 +16,10 @@ from exceptions import *
 from validation.model import model
 
 
+
 ''' Settings '''
 dl_model = model
 # dl_model = None
-
 
 
 
@@ -251,6 +252,45 @@ def process_validate_code(validate_code):
         return ''.join(validate_code)
 
 
+def send_to_ip_protector(student_id, password, take_course=False,
+                         course_no=None, domain=None, year=None):
+
+    if take_course:
+        url  = "http://127.0.0.1:5500/take"
+        data = json.dumps({
+            "studentId" : student_id,
+            "password"  : password,
+            "takeCourse": take_course,
+            "courseNo"  : course_no,
+            "domain"    : domain,
+            "year"      : year,
+        })
+    else:
+        url = "http://127.0.0.1:5500/login"
+        data = json.dumps({
+            "studentId": student_id,
+            "password" : password,
+        })
+        
+    headers={ "Content-Type": "application/json" }
+    response = requests.post(url=url, headers=headers, data=data)
+
+    if response.ok:
+        if take_course:
+            return response.json()["data"]["result"]
+        else:
+            data = response.json()["data"]
+            return data["cookies"], data["name"], data["major"]
+    else:
+        if response.text == "Password wrong.":
+            raise PasswordWrongException
+        elif response.text == "Student ID not exist.":
+            raise StudentIdNotExistException
+        elif response.text == "Selenium stucked.":
+            raise SeleniumStuckException
+        raise Exception(response.text)
+
+
 def login_course_taking_system(student_id, password, take_course=False,
                                course_no=None, domain=None, year=None):
 
@@ -338,8 +378,9 @@ def login_course_taking_system(student_id, password, take_course=False,
                     # Hot fix for 97~105 domains
                     if year <= 105 and domain == "語言與文學":
                         pass
-                    elif domain in [ "語言與文學", "藝術與美感", "哲學思維與道德推理", "公民素養與社會探究", "歷史與文化",
-                                     "數學與邏輯思維", "科學與生命", "人文藝術", "社會科學", "自然科學", "邏輯運算" ]:
+                    elif domain in [ "語言與文學", "藝術與美感", "哲學思維與道德推理", "公民素養與社會探究",
+                                     "歷史與文化", "數學與邏輯思維", "科學與生命", "第二外語", "人文藝術", "社會科學",
+                                     "自然科學", "邏輯運算", "學院共同課程", "跨域專業探索課程" ]:
                         wait_to_click(bar, take_course)                                         # 「選擇通識領域」下拉 bar 按鈕
                         wait_to_click(wait_domain_option_by_text(driver, domain), take_course)  # 各領域選項
                         wait_to_click(wait_for_random_id_button(driver), take_course)           # 「確認」按鈕
