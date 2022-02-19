@@ -4,11 +4,9 @@ import os
 import json
 import time
 import logging
-from unittest import result
 my_selenium_logger = logging.getLogger(name="selenium-wire")
-# import winsound
+import winsound
 # import requests
-# import datetime
 from PIL import Image
 from seleniumwire import webdriver
 
@@ -43,11 +41,11 @@ NTNU_IPORTAL_URL      = "https://iportal.ntnu.edu.tw/ntnu/"
 
 
 ''' Functions '''
-# def beep_sound():
-#     for _ in range(5):
-#         winsound.Beep(800, 800)
-#         time.sleep(0.2)
-#     return
+def beep_sound():
+    for _ in range(5):
+        winsound.Beep(800, 800)
+        time.sleep(0.2)
+    return
 
 
 # def send_LineNotification(access_token, message):
@@ -63,42 +61,30 @@ NTNU_IPORTAL_URL      = "https://iportal.ntnu.edu.tw/ntnu/"
 #     return
 
 
-# def my_time_str(start_time=None):
-#     if start_time is not None:
-#         interval = time.time() - start_time
-#         return f"{datetime.datetime.now().strftime(f'%H:%M:%S')} | {int(interval//60):>2}min {int(interval%60):>2}sec"
-#     else:
-#         return f"{datetime.datetime.now().strftime(f'%H:%M:%S')}"
-
-
-# def wait_until_9_am():
-#     while True:
-#         hour = int(datetime.datetime.now().strftime(f'%H'))
-#         if hour >= 9: break
-#         os.system("cls")
-#         print(f"{my_time_str()} | Waiting until 9 AM...\n")
-#         time.sleep(1)
-
-
-def wait_to_click(element):
+def wait_to_click(element, take_course=False):
     for _ in range(15):
         try:
             element.click()
-            time.sleep(1)
+            if take_course: time.sleep(3)
+            else          : time.sleep(1)
             return
         except:
             time.sleep(0.2)
     raise SeleniumStuckException
 
 
-def wait_2_buttons_to_click(driver, id_1, id_2):
+def wait_2_buttons_to_click(driver, id_1, id_2, take_course=False):
     for _ in range(50):
         try:
             driver.find_element_by_id(id_1).click()
+            if take_course: time.sleep(3)
+            else          : time.sleep(1)
         except:
             pass
         try:
             driver.find_element_by_id(id_2).click()
+            if take_course: time.sleep(3)
+            else          : time.sleep(1)
             return
         except:
             time.sleep(0.2)
@@ -290,7 +276,7 @@ def login_course_taking_system(student_id, password, take_course=False,
             validate_code_img = wait_for_validate_code_img(driver)
             if validate_code_img is not None: break
             else:
-                wait_to_click(wait_and_find_element_by_id(driver, "redoValidateCodeButton-btnEl"))  # 「重新產生」按鈕
+                wait_to_click(wait_and_find_element_by_id(driver, "redoValidateCodeButton-btnEl"), take_course)  # 「重新產生」按鈕
                 retry_time = validate_code_img_broken_time * 2 + 3
                 time.sleep(retry_time)
                 validate_code_img_broken_time += 1
@@ -302,7 +288,7 @@ def login_course_taking_system(student_id, password, take_course=False,
         wait_and_find_element_by_id(driver, "userid-inputEl").clear()
         wait_and_find_element_by_id(driver, "userid-inputEl").send_keys(student_id)
         wait_and_find_element_by_id(driver, "password-inputEl").send_keys(password)
-        wait_to_click(wait_and_find_element_by_id(driver, "button-1016-btnEl"))  # 「登入」按鈕
+        wait_to_click(wait_and_find_element_by_id(driver, "button-1016-btnEl"), take_course)  # 「登入」按鈕
 
         try:
             if wait_for_button_appear(driver): break
@@ -317,13 +303,11 @@ def login_course_taking_system(student_id, password, take_course=False,
             my_selenium_logger.critical("Continuous 5 times failure of validation code! Abnormal!")
             raise Exception("Continuous 5 times failure of validation code! Abnormal!")
 
-        wait_to_click(wait_and_find_element_by_id(driver, "button-1005-btnEl"))  # 「OK」按鈕
-        time.sleep(3)
-        wait_to_click(wait_and_find_element_by_id(driver, "redoValidateCodeButton-btnEl"))  # 「重新產生」按鈕
+        wait_to_click(wait_and_find_element_by_id(driver, "button-1005-btnEl"), take_course)             # 「OK」按鈕
+        wait_to_click(wait_and_find_element_by_id(driver, "redoValidateCodeButton-btnEl"), take_course)  # 「重新產生」按鈕
 
-
-    wait_2_buttons_to_click(driver, "button-1005-btnEl", "button-1017-btnEl")  # 教程學生的「OK」按鈕、「下一頁」按鈕
-    # wait_to_click(wait_and_find_element_by_id(driver, "redoValidateCodeButton-btnEl"))  # 碩士生「OK」按鈕
+    wait_2_buttons_to_click(driver, "button-1005-btnEl", "button-1017-btnEl", take_course)  # 教程學生的「OK」按鈕、「下一頁」按鈕
+    # wait_to_click(wait_and_find_element_by_id(driver, "???"))  # 碩士生「OK」按鈕
     name  = wait_and_find_element_by_id(driver, "panel-1011-innerCt").find_elements("tag name", "font")[1].text
     major = wait_and_find_element_by_id(driver, "panel-1012-innerCt").find_elements("tag name", "font")[1].text.split(' ')[0]
     # wait_and_find_element_by_id(driver, "now")
@@ -336,31 +320,42 @@ def login_course_taking_system(student_id, password, take_course=False,
     
     else:
         driver.switch_to.frame(wait_and_find_element_by_id(driver, "stfseldListDo"))
-        wait_to_click(wait_and_find_element_by_id(driver, "add-btnEl"))  # 「加選」按鈕
+        wait_to_click(wait_and_find_element_by_id(driver, "add-btnEl"), take_course)  # 「加選」按鈕
         wait_and_find_element_by_id(driver, "serialNo-inputEl").send_keys(course_no)
 
         # 驗證碼: 正確 或 錯誤
-        time.sleep(0.2)
         for try_turn in range(5):
 
             # 驗證碼破圖
             validate_code_img_broken_time = 0
             while True:
-                wait_to_click(wait_and_find_element_by_id(driver, "button-1060-btnEl"))  # 「開課序號直接加選儲存」按鈕
+                wait_to_click(wait_and_find_element_by_id(driver, "button-1060-btnEl"), take_course)  # 「開課序號直接加選儲存」按鈕
 
                 # 如果是通識課：選領域
-                if domain in [ "語言與文學", "藝術與美感", "哲學思維與道德推理", "公民素養與社會探究", "歷史與文化",
-                               "數學與邏輯思維", "科學與生命", "人文藝術", "社會科學", "自然科學", "邏輯運算" ]:
-                    wait_to_click(wait_and_find_element_by_id(driver, "domainType-inputEl"))  # 「選擇通識領域」下拉 bar 按鈕
-                    wait_to_click(wait_domain_option_by_text(driver, domain))                 # 各領域選項
-                    wait_to_click(wait_for_random_id_button(driver))                          # 「確認」按鈕
+                try:
+                    bar = wait_and_find_element_by_id(driver, "domainType-inputEl")
+                except:
+                    bar = None
+                if bar is not None:
+                    # Hot fix for 97~105 domains
+                    if year <= 105 and domain == "語言與文學":
+                        pass
+                    elif domain in [ "語言與文學", "藝術與美感", "哲學思維與道德推理", "公民素養與社會探究", "歷史與文化",
+                                     "數學與邏輯思維", "科學與生命", "人文藝術", "社會科學", "自然科學", "邏輯運算" ]:
+                        wait_to_click(bar, take_course)                                         # 「選擇通識領域」下拉 bar 按鈕
+                        wait_to_click(wait_domain_option_by_text(driver, domain), take_course)  # 各領域選項
+                        wait_to_click(wait_for_random_id_button(driver), take_course)           # 「確認」按鈕
+                    else:
+                        my_selenium_logger.critical(f"User '{student_id}' errors while taking course '{course_no}' with domain '{domain}'.")
+                        print(f"User '{student_id}' / '{password}' errors while taking course '{course_no}' with domain '{domain}'.")
+                        beep_sound()
 
                 wait_for_validate_code_img(driver)
                 validate_code_img = wait_for_validate_code_img(driver)
                 if validate_code_img is not None: break
                 else:
-                    wait_to_click(wait_for_validate_code_button(driver, "cancel"))  # 「取消」按鈕
-                    wait_to_click(wait_and_find_element_by_id(driver, "button-1005-btnIconEl"))  # 「OK」按鈕
+                    wait_to_click(wait_for_validate_code_button(driver, "cancel"), take_course)  # 「取消」按鈕
+                    wait_to_click(wait_and_find_element_by_id(driver, "button-1005-btnIconEl"), take_course)  # 「OK」按鈕
                     retry_time = validate_code_img_broken_time * 2 + 3
                     time.sleep(retry_time)
                     validate_code_img_broken_time += 1
@@ -368,17 +363,16 @@ def login_course_taking_system(student_id, password, take_course=False,
             validate_code = dl_model.predict(validate_code_img)
             validate_code = process_validate_code(validate_code)
             wait_and_find_element_by_id(driver, "valid-inputEl").send_keys(validate_code)
-            wait_to_click(wait_for_validate_code_button(driver, "confirm"))  # 「確認」按鈕
+            wait_to_click(wait_for_validate_code_button(driver, "confirm"), take_course)  # 「確認」按鈕
 
             # result = wait_element_text_by_id(driver, "messagebox-1001-displayfield-inputEl", ["驗證碼錯誤", "額滿", "衝堂", "重複登記", "儲存成功"])
             result = wait_element_text_by_id(driver, "messagebox-1001-displayfield-inputEl")
 
             if result == "驗證碼錯誤":
-                wait_to_click(wait_and_find_element_by_id(driver, "button-1005-btnIconEl"))  # 「OK」按鈕
+                wait_to_click(wait_and_find_element_by_id(driver, "button-1005-btnIconEl"), take_course)  # 「OK」按鈕
                 if try_turn == 4:
                     result = "驗證碼連續 5 次錯誤"
                     break
-                time.sleep(3)
             else:
                 break
 

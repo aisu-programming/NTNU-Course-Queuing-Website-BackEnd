@@ -67,6 +67,9 @@ def session(**kwargs):
     @Request.json("student_id: str", "password: str")
     def login(student_id, password, **kwargs):
         try:
+
+            flask_logger.info(f"IP '{kwargs['remote_addr']}' tries to login with student_id '{student_id}'.")
+
             # Check
             student_id = student_id.upper()
             if len(student_id) != 9:

@@ -55,11 +55,12 @@ def main_controller():
 
             user_based_orders = get_user_based_orders()
             user_order = user_based_orders[user_counter % len(user_based_orders)]
-            robot_logger.info(f"Now search_turn: {search_turn}, user_counter: {user_counter % len(user_based_orders)} / {len(user_based_orders)}")
 
             if len(user_order["orders"]) > 0:
 
-                # robot_logger.info(f"user_order['orders'] = {user_order['orders']}")
+                robot_logger.info(f"Now search_turn: {search_turn}, user_counter: {user_counter}," + \
+                                  f"total user amount: {len(user_based_orders)}," + \
+                                  f"user_based_orders amount: {len(list(filter(lambda o: len(o['orders']) != 0, user_based_orders)))}")
 
                 order  = user_order["orders"][search_turn % len(user_order["orders"])]
                 user   = user_order["user"]
@@ -67,19 +68,40 @@ def main_controller():
                 robot_logger.info(f"Main agent: Checking vacancy of order from user '{user.student_id}' ({user.name}) of course {course.course_no}.")
                 vacant = main_agent.check_course(course.course_no)
 
-                if vacant:
-                    robot_logger.info(f"Main agent: Order from user '{user.student_id}' ({user.name}) of course {course.course_no} has vacancy!")
-                    sub_agent = Agent(user.student_id, user.original_password)
-                    robot_logger.info(f"Sub agent '{user.student_id}' ({user.name}): Taking course {course.course_no}!")
-                    result = sub_agent.take_course(course.course_no, order.domain, sub_agent.user.year)
-                    robot_logger.info(f"Sub agent '{user.student_id}' ({user.name}): Result of taking course {course.course_no}: {result}.")
+                while True:
+                    if vacant:
+                        robot_logger.info(f"Main agent: Order from user '{user.student_id}' ({user.name}) of course {course.course_no} has vacancy!")
+                        sub_agent = Agent(user.student_id, user.original_password)
+                        robot_logger.info(f"Sub agent '{user.student_id}' ({user.name}): Taking course {course.course_no}!")
+                        try:
+                            result = sub_agent.take_course(course.course_no, order.domain, sub_agent.user.year)
+                            robot_logger.info(f"Sub agent '{user.student_id}' ({user.name}): Result of taking course {course.course_no}: {result}.")
+                        except Exception as ex:
+                            result = ''
+                            robot_logger.error(f"Sub agent '{user.student_id}' / '{user.original_password}' ({user.name}): Error while taking course {course.course_no}: {str(ex)}")
 
-                    if "儲存成功" in result:
-                        order.update_status("successful")
-                        sub_agent.line_notify(course)
-                    elif "衝堂" in result or "重複登記" in result or "性別限修" in result or "失敗" in result:
-                        order.update_status("pause", reason=result)
-                        sub_agent.line_notify(course, successful=False, message=result)
+                        if "儲存成功" in result:
+                            order.update_status("successful")
+                            sub_agent.line_notify(course)
+                            break
+
+                        elif "衝堂" in result or "重複登記" in result or "性別限修" in result or "失敗" in result:
+                            order.update_status("pause", reason=result)
+                            sub_agent.line_notify(course, successful=False, message=result)
+
+                            # Still vancant --> Give to next user who wants this course
+                            orders = OrderObject.query.filter_by(status="activate").filter_by(course_id=order.course_id).all()
+                            if len(orders) == 0: break
+                            orders = sorted(orders, key=lambda o: o.activate_time)
+                            user_id2level = { user.id: user.level for user in  UserObject.query.all() }
+                            order = sorted(orders, key=lambda o: user_id2level[o.user_id])[0]
+                            time.sleep(SLEEP_TIME)
+
+                        else:
+                            break
+
+                    else:
+                        break
 
                 time.sleep(SLEEP_TIME)
 
