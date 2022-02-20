@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from utils.mapping import department_text2code
 from utils.exceptions import RobotStuckException
 from database.model import UserObject, OrderObject
-from ntnu.utils.webdriver import send_to_ip_protector, login_course_taking_system, login_iportal
+from ntnu.utils.webdriver import send_to_ip_protector, login_course_taking_system
 from ntnu.utils.webdriver import NTNU_WEBSITE_HOST, NTNU_COURSE_QUERY_URL
 
 
