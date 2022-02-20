@@ -64,7 +64,8 @@ class User():
 
     # Log into 選課系統 with selenium, get the cookie, and set to session
     def set_cookie(self):
-        cookies, name, major = login_course_taking_system(self.student_id, self.password)
+        cookies, name, major = send_to_ip_protector(self.student_id, self.password)
+        # cookies, name, major = login_course_taking_system(self.student_id, self.password)
         del cookies["httpOnly"]
         self.session.cookies.set(**cookies)
         self.login_time = datetime.now()
@@ -185,10 +186,14 @@ class Agent(User):
 
     # 加選課程
     def take_course(self, course_no, domain, year):
-        return login_course_taking_system(
+        return send_to_ip_protector(
             self.student_id, self.password, take_course=True,
             course_no=course_no, domain=domain, year=year,
         )
+        # return login_course_taking_system(
+        #     self.student_id, self.password, take_course=True,
+        #     course_no=course_no, domain=domain, year=year,
+        # )
 
     # # 加選課程
     # @__check_add_course_page
@@ -253,36 +258,34 @@ class Agent(User):
 
     # 透過 LINE 通知
     def line_notify(self, course, successful=True, message=None):
-        if self.user.line_uid is not None:
+        if successful:
+            message = f"{self.user.name}，恭喜你排到課程: \n" + \
+                    f"- 課程序號: {course.course_no}\n" + \
+                    f"- 課程名稱: {course.chinese_name}\n" + \
+                    f"- 時間地點: {course.time_info}"
+        else:
+            assert message is not None
+            message = f"{self.user.name}，刷課時發生錯誤，因此已暫停該筆選課: \n" + \
+                    f"- 課程序號: {course.course_no}\n" + \
+                    f"- 課程名稱: {course.chinese_name}\n" + \
+                    f"- 時間地點: {course.time_info}\n" + \
+                    f"- 錯誤內容: {message}"
 
-            if successful:
-                message = f"{self.user.name}，恭喜你排到課程: \n" + \
-                        f"- 課程序號: {course.course_no}\n" + \
-                        f"- 課程名稱: {course.chinese_name}\n" + \
-                        f"- 時間地點: {course.time_info}"
-            else:
-                assert message is not None
-                message = f"{self.user.name}，刷課時發生錯誤，因此已暫停該筆選課: \n" + \
-                        f"- 課程序號: {course.course_no}\n" + \
-                        f"- 課程名稱: {course.chinese_name}\n" + \
-                        f"- 時間地點: {course.time_info}\n" + \
-                        f"- 錯誤內容: {message}"
-
-            r = requests.post(
-                "https://api.line.me/v2/bot/message/push",
-                headers={
-                    "Content-Type" : "application/json",
-                    "Authorization": f"Bearer {LINE_BEARER}"
-                },
-                data=json.dumps({
-                    "to"      : self.user.line_uid,
-                    "messages": [{
-                        "type": "text",
-                        "text": message
-                    }]
-                })
-            )
-        return
+        response = requests.post(
+            "https://api.line.me/v2/bot/message/push",
+            headers={
+                "Content-Type" : "application/json",
+                "Authorization": f"Bearer {LINE_BEARER}"
+            },
+            data=json.dumps({
+                "to"      : self.user.line_uid,
+                "messages": [{
+                    "type": "text",
+                    "text": message
+                }]
+            })
+        )
+        return response
 
     # # 獲取學校所有課程
     # def get_all_ntnu_courses(self):

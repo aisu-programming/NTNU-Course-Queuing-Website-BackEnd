@@ -2,8 +2,8 @@
 import os
 import time
 import logging
-
 robot_logger = logging.getLogger(name="robot")
+import winsound
 from datetime import datetime
 
 from ntnu.model import Agent
@@ -18,6 +18,13 @@ SLEEP_TIME = 10
 
 
 ''' Functions '''
+def beep_sound():
+    for _ in range(5):
+        winsound.Beep(800, 800)
+        time.sleep(0.2)
+    return
+
+
 def get_user_based_orders():
     db.session.commit()  # Use to refresh session
     orders_all    = OrderObject.query.filter_by(status="activate").all()
@@ -70,6 +77,7 @@ def main_controller():
 
                 while True:
                     if vacant:
+                        print('\n')
                         robot_logger.info(f"Main agent: Order from user '{user.student_id}' ({user.name}) of course {course.course_no} has vacancy!")
                         sub_agent = Agent(user.student_id, user.original_password)
                         robot_logger.info(f"Sub agent '{user.student_id}' ({user.name}): Taking course {course.course_no}!")
@@ -79,15 +87,28 @@ def main_controller():
                         except Exception as ex:
                             result = ''
                             robot_logger.error(f"Sub agent '{user.student_id}' / '{user.original_password}' ({user.name}): Error while taking course {course.course_no}: {str(ex)}")
+                            beep_sound()
 
                         if "儲存成功" in result:
                             order.update_status("successful")
-                            sub_agent.line_notify(course)
-                            break
+                            if sub_agent.user.line_uid is not None:
+                                response = sub_agent.line_notify(course)
+                                if response.ok:
+                                    robot_logger.info(f"Sending LINE Notification to User '{user.student_id}' ({user.name}): Success.")
+                                else:
+                                    robot_logger.warning(f"Sending LINE Notification to User '{user.student_id}' ({user.name}): Failure because of {response.text}.")
+                            else:
+                                robot_logger.info(f"User '{user.student_id}' ({user.name}) did not link LINE Notification.")
 
                         elif "衝堂" in result or "重複登記" in result or "性別限修" in result or "失敗" in result:
                             order.update_status("pause", reason=result)
-                            sub_agent.line_notify(course, successful=False, message=result)
+                            if sub_agent.user.line_uid is not None:
+                                response = sub_agent.line_notify(course, successful=False, message=result)
+                                if response.ok:
+                                    robot_logger.info(f"Sending LINE Notification to User '{user.student_id}' ({user.name}): Success.")
+                                else:
+                                    robot_logger.warning(f"Sending LINE Notification to User '{user.student_id}' ({user.name}): Failure because of {response.text}.")
+                                robot_logger.info(f"User '{user.student_id}' ({user.name}) did not link LINE Notification.")
 
                             # Still vancant --> Give to next user who wants this course
                             orders = OrderObject.query.filter_by(status="activate").filter_by(course_id=order.course_id).all()
@@ -96,9 +117,10 @@ def main_controller():
                             user_id2level = { user.id: user.level for user in  UserObject.query.all() }
                             order = sorted(orders, key=lambda o: user_id2level[o.user_id])[0]
                             time.sleep(SLEEP_TIME)
+                            continue
 
-                        else:
-                            break
+                        print('\n')
+                        break
 
                     else:
                         break
