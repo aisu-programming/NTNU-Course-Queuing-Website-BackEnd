@@ -7,7 +7,9 @@ In this project, I decided to install on Windows, which is much more friendly to
 
 Accordingly, this tutorial is write for Windows users.
 
-For Linux users, I bet you are familiar to programs, it should be easy for you to setup this project without detailed procedures.
+For Linux users, I bet you are familiar to programs.
+
+It should be easy for you to setup this project without detailed procedures.
 
 For Mac users... Sorry. XD
 
