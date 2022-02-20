@@ -48,7 +48,7 @@ For Mac users... Sorry. XD
    
    Open files in it, fill all "???" and delete all "(SOME_EXPLAIN)".
 
-   For the `robot.env`, you will have to register LINE LOGIN and LINE Message API at [LINE Developers](https://developers.line.biz/zh-hant/) to get LINE_CLIENT_SECRET and LINE_BEARER.
+   For `robot.env`, you will have to register LINE LOGIN and LINE Message API at [LINE Developers](https://developers.line.biz/zh-hant/) to get LINE_CLIENT_SECRET and LINE_BEARER.
    
    There are plenty tutorials on the Internet, you can follow those to register LINE bot.
    
