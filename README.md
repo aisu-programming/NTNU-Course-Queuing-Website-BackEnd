@@ -55,6 +55,6 @@ For Mac users... Sorry. XD
    1. LINE LOGIN offical tutorial: https://developers.line.biz/zh-hant/docs/line-login/getting-started/
    2. LINE Message API offical tutorial: https://developers.line.biz/zh-hant/docs/messaging-api/getting-started/
 
-   Beware! You have to finish the setting of your domain first, so that you can verify Webhook URL in Message API.
+   Beware! You have to finish your network management first, so that you can verify Webhook URL in Message API.
    
 6. Start the Back-End: Enter command `python app.py`!
