@@ -11,7 +11,7 @@ test.py
 data/history
 
 # NTNU website
-ntnu/chromedriver_win32
+ntnu/chromedriver_win32/chromedriver.exe
 
 # Deep Learning for Validation Code
 *.h5
