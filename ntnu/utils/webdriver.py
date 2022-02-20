@@ -231,15 +231,6 @@ def wait_for_validate_code_img(driver):
     return None
 
 
-def wait_for_course_history(driver):
-    for _ in range(5):
-        for request in reversed(driver.requests):
-            if "AccseldServlet.do?action=scorelist" in request.url:
-                return request.response.body
-        time.sleep(0.2)
-    return None
-
-
 number_map = { str(i): i for i in range(10) }
 def process_validate_code(validate_code):
     if '=' in validate_code:
@@ -417,21 +408,3 @@ def login_course_taking_system(student_id, password, take_course=False,
 
         driver.quit()
         return result
-
-
-def login_iportal(student_id, password):
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
-    driver = webdriver.Chrome(WEBDRIVER_PATH, options=options)
-    driver.get(NTNU_IPORTAL_URL)
-    wait_and_find_element_by_id(driver, "muid").send_keys(student_id)
-    wait_and_find_element_by_id(driver, "mpassword").send_keys(password)
-    wait_to_click(wait_and_find_element_by_name(driver, "Submit22"))  # 「登入」按鈕
-    wait_to_click(wait_and_find_elements_by_name(driver, "apFolder")[1])  # 「教務相關系統」列表
-    wait_to_click(wait_and_find_element_by_id(driver, "ap-acadm").find_elements("tag name", "li")[5])  # 「教務相關系統」列表
-    driver.close()
-    driver.switch_to.window(driver.window_handles[0])
-    wait_to_click(wait_and_find_element_by_id(driver, "treeview-1013-record-37"))  # 「成績查詢」列表
-    history = json.loads(wait_for_course_history(driver))
-    driver.quit()
-    return history

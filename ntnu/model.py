@@ -51,15 +51,19 @@ class User():
         return
 
     def __register(self):
+        my_selenium_logger.info(f"User '{self.student_id}' ({self.user.name}) login first time! Registering...")
         name, major = self.set_cookie()
         major = department_text2code[major]
         self.user = UserObject(self.student_id, self.password, name, major)
         self.user.register()
+        my_selenium_logger.info(f"User '{self.student_id}' ({self.user.name}) login first time! Registered successfully!")
         return
 
     def __update_password(self):
+        my_selenium_logger.info(f"User '{self.student_id}' ({self.user.name}) login with a different password. Checking update...")
         self.set_cookie()
         self.user.update_password(self.password)
+        my_selenium_logger.info(f"User '{self.student_id}' ({self.user.name}) has successfully update new password.")
         return
 
     # Log into 選課系統 with selenium, get the cookie, and set to session
@@ -71,12 +75,6 @@ class User():
         self.login_time = datetime.now()
         self.add_course_page = False
         return name, major
-
-    # Log into 校務行政系統 and get all courses the student has taken
-    def get_course_history(self):
-        history = login_iportal(self.student_id, self.password)
-        self.history = history
-        return
 
     @property
     def jwt(self):
