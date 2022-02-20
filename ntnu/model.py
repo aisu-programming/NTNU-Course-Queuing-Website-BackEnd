@@ -68,8 +68,8 @@ class User():
 
     # Log into 選課系統 with selenium, get the cookie, and set to session
     def set_cookie(self):
-        cookies, name, major = send_to_ip_protector(self.student_id, self.password)
-        # cookies, name, major = login_course_taking_system(self.student_id, self.password)
+        # cookies, name, major = send_to_ip_protector(self.student_id, self.password)
+        cookies, name, major = login_course_taking_system(self.student_id, self.password)
         del cookies["httpOnly"]
         self.session.cookies.set(**cookies)
         self.login_time = datetime.now()
@@ -184,14 +184,14 @@ class Agent(User):
 
     # 加選課程
     def take_course(self, course_no, domain, year):
-        return send_to_ip_protector(
-            self.student_id, self.password, take_course=True,
-            course_no=course_no, domain=domain, year=year,
-        )
-        # return login_course_taking_system(
+        # return send_to_ip_protector(
         #     self.student_id, self.password, take_course=True,
         #     course_no=course_no, domain=domain, year=year,
         # )
+        return login_course_taking_system(
+            self.student_id, self.password, take_course=True,
+            course_no=course_no, domain=domain, year=year,
+        )
 
     # # 加選課程
     # @__check_add_course_page
