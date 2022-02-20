@@ -4,7 +4,7 @@ flask_logger = logging.getLogger(name="flask")
 from functools import wraps
 from flask import Blueprint, request
 
-from exceptions import *
+from utils.exceptions import *
 from api.utils.request import Request
 from api.utils.response import *
 from api.utils.jwt import jwt_decode

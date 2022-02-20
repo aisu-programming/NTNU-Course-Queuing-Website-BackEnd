@@ -37,7 +37,7 @@ DB_NAME     = os.environ.get("DB_NAME")
 
 
 ''' Settings '''
-from my_logging import *
+from utils.my_logging import *
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 # app.config['DEBUG'] = True

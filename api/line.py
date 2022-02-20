@@ -5,7 +5,7 @@ flask_logger = logging.getLogger(name="flask")
 import requests
 from flask import Blueprint, request
 
-from exceptions import *
+from utils.exceptions import *
 from api.auth import login_required
 from api.utils.jwt import jwt_decode
 from api.utils.response import *

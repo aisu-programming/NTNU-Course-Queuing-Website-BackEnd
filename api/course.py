@@ -6,7 +6,7 @@ from flask import Blueprint
 from bitstring import BitArray
 from sqlalchemy import or_, and_
 
-from exceptions import *
+from utils.exceptions import *
 from api.auth import login_detect
 from api.utils.request import Request
 from api.utils.response import *

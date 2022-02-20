@@ -11,7 +11,7 @@ os.environ["ROOT_PATH"] = os.path.dirname(os.path.abspath(__file__))
 # Flask
 from flask import Flask
 
-from exceptions import *
+from utils.exceptions import *
 from ntnu.utils.webdriver import login_course_taking_system
 from api.utils.request import Request
 from api.utils.response import HTTPResponse, HTTPError
@@ -20,7 +20,7 @@ from api.utils.response import HTTPResponse, HTTPError
 
 ''' Settings '''
 app = Flask(__name__)
-import my_logging
+from utils.my_logging import *
 import logging
 ip_protector_logger = logging.getLogger(name="ip_protector")
 

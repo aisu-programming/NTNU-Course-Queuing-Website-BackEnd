@@ -11,8 +11,8 @@ import winsound
 from PIL import Image
 from seleniumwire import webdriver
 
-from mapping import domain_106_code2text, domain_109_code2text
-from exceptions import *
+from utils.mapping import domain_106_code2text, domain_109_code2text
+from utils.exceptions import *
 from validation.model import model
 
 
@@ -257,7 +257,7 @@ def send_to_ip_protector(student_id, password, take_course=False,
             "year"      : year,
         })
     else:
-        url = "http://127.0.0.1:5500/login"
+        url  = "http://127.0.0.1:5500/login"
         data = json.dumps({
             "studentId": student_id,
             "password" : password,

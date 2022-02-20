@@ -6,7 +6,7 @@ from functools import wraps
 from datetime import datetime
 
 from api.utils.response import HTTPError
-from exceptions import BannedException
+from utils.exceptions import BannedException
 from database.model import Connection
 
 

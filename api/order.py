@@ -3,7 +3,7 @@ import logging
 flask_logger = logging.getLogger(name="flask")
 from flask import Blueprint, request
 
-from exceptions import *
+from utils.exceptions import *
 from api.auth import login_required
 from api.utils.rate_limit import rate_limit
 from api.utils.request import Request

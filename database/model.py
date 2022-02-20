@@ -5,12 +5,12 @@ import pytz
 from tqdm import tqdm
 from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Column, ForeignKey
+from sqlalchemy import Column  #, ForeignKey
 from sqlalchemy.dialects.mysql import \
     TINYINT, SMALLINT, CHAR, VARCHAR, \
     FLOAT, BINARY, BIT, DATETIME, ENUM, JSON
 
-from mapping import department_code2id, department_code2text, domain_106_text, domain_109_text, domain_106_code2text, domain_109_code2text
+from utils.mapping import department_code2id, department_code2text, domain_106_text, domain_109_text, domain_106_code2text, domain_109_code2text
 from database.utils import AES_encode, AES_decode, process_time_info
 
 
