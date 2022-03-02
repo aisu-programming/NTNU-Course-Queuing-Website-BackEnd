@@ -10,8 +10,8 @@ class PasswordWrongException(Exception):
 class DataIncorrectException(Exception):
     pass
 
-class SeleniumStuckException(Exception):
+class SeleniumIsStuckException(Exception):
     pass
 
-class RobotStuckException(Exception):
+class RobotIsStuckException(Exception):
     pass

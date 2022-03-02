@@ -12,7 +12,7 @@ os.makedirs("logs", exist_ok=True)
 os.makedirs(log_dir, exist_ok=True)
 
 log_format_str = \
-    "[%(levelname)-8s] %(name)-20s | %(asctime)s | %(module)-12s: %(funcName)-15s: %(lineno)-3d | %(message)s"
+    "[%(levelname)-8s] %(name)-20s | %(asctime)s | %(module)-12s: %(funcName)-18s: %(lineno)-3d | %(message)s"
 log_formater = logging.Formatter(log_format_str, datefmt="%Y-%m-%d %H:%M:%S")
 file_handler = logging.FileHandler(f"{log_dir}/all.log")
 console_handler = logging.StreamHandler(sys.stdout)

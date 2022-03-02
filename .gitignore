@@ -9,6 +9,7 @@ venv*
 logs
 test.py
 data/history
+data/backup
 
 # NTNU website
 ntnu/chromedriver_win32/chromedriver.exe

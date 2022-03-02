@@ -50,9 +50,9 @@ def login(student_id, password):
         ip_protector_logger.info(f"User '{student_id}' has failed to login: Student ID not exist.")
         return HTTPError("Student ID not exist.", 403)
 
-    except SeleniumStuckException:
-        ip_protector_logger.info(f"User '{student_id}' has failed to login: Selenium stucked.")
-        return HTTPError("Selenium stucked.", 500)
+    except SeleniumIsStuckException:
+        ip_protector_logger.info(f"User '{student_id}' has failed to login: Selenium is stuck.")
+        return HTTPError("Selenium is stuck.", 500)
 
     except Exception as ex:
         ip_protector_logger.info(f"User '{student_id}' has failed to login: {str(ex)}.")
@@ -81,9 +81,9 @@ def take_course(student_id, password, take_course,
         ip_protector_logger.info(f"User '{student_id}' has failed to take course: Student ID not exist.")
         return HTTPError("Student ID not exist.", 403)
 
-    except SeleniumStuckException:
-        ip_protector_logger.info(f"User '{student_id}' has failed to take course: Selenium stucked.")
-        return HTTPError("Selenium stucked.", 500)
+    except SeleniumIsStuckException:
+        ip_protector_logger.info(f"User '{student_id}' has failed to take course: Selenium is stuck.")
+        return HTTPError("Selenium is stuck.", 500)
 
     except Exception as ex:
         ip_protector_logger.info(f"User '{student_id}' has failed to take course: {str(ex)}.")

@@ -6,11 +6,13 @@ import time
 import logging
 my_selenium_logger = logging.getLogger(name="selenium-wire")
 import requests
+from colorama import init
+init(convert=True)
 from functools import wraps
 from datetime import datetime, timedelta
 
 from utils.mapping import department_text2code
-from utils.exceptions import RobotStuckException
+from utils.exceptions import RobotIsStuckException
 from database.model import UserObject, OrderObject
 from ntnu.utils.webdriver import send_to_ip_protector, login_course_taking_system
 from ntnu.utils.webdriver import NTNU_WEBSITE_HOST, NTNU_COURSE_QUERY_URL
@@ -51,19 +53,23 @@ class User():
         return
 
     def __register(self):
-        my_selenium_logger.info(f"User '{self.student_id}' ({self.user.name}) login first time! Registering...")
+        print('\033[1;33m', end='')
+        my_selenium_logger.info(f"User '{self.student_id}' login first time! Registering...")
         name, major = self.set_cookie()
         major = department_text2code[major]
         self.user = UserObject(self.student_id, self.password, name, major)
         self.user.register()
         my_selenium_logger.info(f"User '{self.student_id}' ({self.user.name}) login first time! Registered successfully!")
+        print('\033[1;37m', end='')
         return
 
     def __update_password(self):
+        print('\033[1;33', end='')
         my_selenium_logger.info(f"User '{self.student_id}' ({self.user.name}) login with a different password. Checking update...")
         self.set_cookie()
         self.user.update_password(self.password)
         my_selenium_logger.info(f"User '{self.student_id}' ({self.user.name}) has successfully update new password.")
+        print('\033[1;37m', end='')
         return
 
     # Log into 選課系統 with selenium, get the cookie, and set to session
@@ -133,12 +139,12 @@ class Agent(User):
         return
 
     # 確保已經切換到「加選」頁面
-    def __check_add_course_page(function):
+    def __check_before_request(function):
         @wraps(function)
         def wrapper(self, *args, **kwargs):
 
             # 超過 20 分鐘: 重置 Session
-            if self.login_time is not None and \
+            if self.login_time is None or \
                datetime.now() - self.login_time >= timedelta(minutes=19):
                 self.session = requests.session()
                 my_selenium_logger.info(f"Agent '{self.student_id}' ({self.user.name}) has reset its session.")
@@ -148,7 +154,7 @@ class Agent(User):
                 my_selenium_logger.info(f"Agent '{self.student_id}' ({self.user.name}) setting cookies.")
                 self.set_cookie()
                 if self.session.cookies.get("JSESSIONID") is None:
-                    raise RobotStuckException(f"Agent '{self.student_id}' ({self.user.name}) can't login and set cookies succesfully.")
+                    raise RobotIsStuckException(f"Agent '{self.student_id}' ({self.user.name}) can't login and set cookies succesfully.")
 
             # 尚未切換到「加選」頁面
             if not self.add_course_page:
@@ -156,30 +162,33 @@ class Agent(User):
                 self.__switch_to_add_course_page()
                 # self.__switch_to_query_course_page()
                 if not self.add_course_page:
-                    raise RobotStuckException(f"Agent '{self.student_id}' ({self.user.name}) can't switch to add course page succesfully.")
+                    raise RobotIsStuckException(f"Agent '{self.student_id}' ({self.user.name}) can't switch to add course page succesfully.")
             return function(self, *args, **kwargs)
         return wrapper
 
     # 查詢課程是否有空位
-    @__check_add_course_page
+    @__check_before_request
     def check_course(self, course_no):
         for _ in range(3):
-            response = self.__post(
-                NTNU_COURSE_QUERY_URL,
-                data={
-                    "action"      : "showGrid",
-                    "actionButton": "query",
-                    "serialNo"    : course_no,
-                    "notFull"     : 1,
-                }
-            )
-            if response.ok and len(response.text) != 0:
-                break
+            try:
+                response = self.__post(
+                    NTNU_COURSE_QUERY_URL,
+                    data={
+                        "action"      : "showGrid",
+                        "actionButton": "query",
+                        "serialNo"    : course_no,
+                        "notFull"     : 1,
+                    }
+                )
+                if response.ok and len(response.text) != 0:
+                    break
+            except Exception as ex:
+                my_selenium_logger.error(f"Error occurs when checking vacancy: {str(ex)}")
             time.sleep(1)
         if not response.ok:
-            raise RobotStuckException(f"Function: check_course get a response {response.status_code}.")
+            raise RobotIsStuckException(f"Function: check_course get a response {response.status_code}.")
         if len(response.text) == 0:
-            raise RobotStuckException("Function: check_course can't get normal response.")
+            raise RobotIsStuckException("Function: check_course can't get normal response.")
         return bool(json.loads(response.text.replace("'", '"'))["Count"])
 
     # 加選課程
@@ -194,7 +203,7 @@ class Agent(User):
         )
 
     # # 加選課程
-    # @__check_add_course_page
+    # @__check_before_request
     # def take_course(self, course_no, domain=''):
     #     # 加選課程前置步驟 1/2
     #     r = self.__post(NTNU_ENROLL_URL, data={

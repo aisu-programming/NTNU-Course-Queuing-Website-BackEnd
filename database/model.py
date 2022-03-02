@@ -265,7 +265,7 @@ class OrderObject(db.Model):
         user   = UserObject.query.filter_by(id=self.user_id).first()
         course = CourseObject.query.filter_by(id=self.course_id).first()
         return {
-            "student_id" : user.student_id,
+            "student_id" : user.student_id[:6] + "***",
             "courseNo"   : course.course_no,
             "chineseName": course.chinese_name,
             "succeedTime": self.last_update_time.replace(tzinfo=TZ_TW),

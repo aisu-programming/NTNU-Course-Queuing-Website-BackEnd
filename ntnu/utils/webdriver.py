@@ -71,7 +71,7 @@ def wait_to_click(element, take_course=False):
             return
         except:
             time.sleep(0.2)
-    raise SeleniumStuckException
+    raise SeleniumIsStuckException
 
 
 def wait_2_buttons_to_click(driver, id_1, id_2, take_course=False):
@@ -89,14 +89,14 @@ def wait_2_buttons_to_click(driver, id_1, id_2, take_course=False):
             return
         except:
             time.sleep(0.2)
-    raise SeleniumStuckException
+    raise SeleniumIsStuckException
 
     
 # def wait_for_url(driver, url_content):
 #     for _ in range(20):
 #         time.sleep(0.25)
 #         if url_content in driver.current_url: return
-#     raise SeleniumStuckException
+#     raise SeleniumIsStuckException
 
 
 # def wait_and_find_element_by_id(driver, id, fast=False):
@@ -107,7 +107,7 @@ def wait_2_buttons_to_click(driver, id_1, id_2, take_course=False):
 #             return element
 #         except:
 #             time.sleep(0.2)
-#     raise SeleniumStuckException
+#     raise SeleniumIsStuckException
 
 
 def wait_and_find_element_by_id(driver, id, fast=False):
@@ -118,7 +118,7 @@ def wait_and_find_element_by_id(driver, id, fast=False):
             return element
         except:
             time.sleep(0.2)
-    raise SeleniumStuckException
+    raise SeleniumIsStuckException
 
 
 def wait_and_find_element_by_name(driver, name):
@@ -128,7 +128,7 @@ def wait_and_find_element_by_name(driver, name):
             return element
         except:
             time.sleep(0.2)
-    raise SeleniumStuckException
+    raise SeleniumIsStuckException
 
 
 def wait_and_find_elements_by_name(driver, name):
@@ -138,7 +138,7 @@ def wait_and_find_elements_by_name(driver, name):
             return elements
         except:
             time.sleep(0.2)
-    raise SeleniumStuckException
+    raise SeleniumIsStuckException
 
 
 def wait_and_find_element_by_class(driver, class_):
@@ -148,7 +148,7 @@ def wait_and_find_element_by_class(driver, class_):
             return element
         except:
             time.sleep(0.2)
-    raise SeleniumStuckException
+    raise SeleniumIsStuckException
 
 
 def wait_domain_option_by_text(driver, text):
@@ -158,7 +158,7 @@ def wait_domain_option_by_text(driver, text):
             return element
         except:
             time.sleep(0.2)
-    raise SeleniumStuckException
+    raise SeleniumIsStuckException
     
 
 def wait_for_random_id_button(driver):
@@ -169,7 +169,7 @@ def wait_for_random_id_button(driver):
             return element
         except:
             time.sleep(0.2)
-    raise SeleniumStuckException
+    raise SeleniumIsStuckException
 
 
 def wait_for_button_appear(driver):
@@ -205,7 +205,7 @@ def wait_element_text_by_id(driver, id):  # , texts):
             #     if text in element.text: return text
         except:
             time.sleep(0.2)
-    raise SeleniumStuckException
+    raise SeleniumIsStuckException
 
 
 def wait_for_validate_code_button(driver, button):
@@ -215,7 +215,7 @@ def wait_for_validate_code_button(driver, button):
             if button == "confirm": return buttons[17]
             else                  : return buttons[18]
         time.sleep(0.2)
-    raise SeleniumStuckException
+    raise SeleniumIsStuckException
 
 
 def wait_for_validate_code_img(driver):
@@ -247,7 +247,7 @@ def send_to_ip_protector(student_id, password, take_course=False,
                          course_no=None, domain=None, year=None):
 
     if take_course:
-        url  = "http://127.0.0.1:5500/take"
+        url  = "http://???.???.???.???:5500/take"
         data = json.dumps({
             "studentId" : student_id,
             "password"  : password,
@@ -257,7 +257,7 @@ def send_to_ip_protector(student_id, password, take_course=False,
             "year"      : year,
         })
     else:
-        url  = "http://127.0.0.1:5500/login"
+        url  = "http://???.???.???.???:5500/login"
         data = json.dumps({
             "studentId": student_id,
             "password" : password,
@@ -273,12 +273,12 @@ def send_to_ip_protector(student_id, password, take_course=False,
             data = response.json()["data"]
             return data["cookies"], data["name"], data["major"]
     else:
-        if response.text == "Password wrong.":
+        if response.json()["message"] == "Password wrong.":
             raise PasswordWrongException
-        elif response.text == "Student ID not exist.":
+        elif response.json()["message"] == "Student ID not exist.":
             raise StudentIdNotExistException
-        elif response.text == "Selenium stucked.":
-            raise SeleniumStuckException
+        elif response.json()["message"] == "Selenium is stuck.":
+            raise SeleniumIsStuckException
         raise Exception(response.text)
 
 
@@ -370,8 +370,8 @@ def login_course_taking_system(student_id, password, take_course=False,
                     if year <= 105 and domain == "語言與文學":
                         pass
                     elif domain in [ "語言與文學", "藝術與美感", "哲學思維與道德推理", "公民素養與社會探究",
-                                     "歷史與文化", "數學與邏輯思維", "科學與生命", "第二外語", "人文藝術", "社會科學",
-                                     "自然科學", "邏輯運算", "學院共同課程", "跨域專業探索課程" ]:
+                                     "歷史與文化", "數學與邏輯思維", "科學與生命", "第二外語", "生活技能", "人文藝術",
+                                     "社會科學", "自然科學", "邏輯運算", "學院共同課程", "跨域專業探索課程" ]:
                         wait_to_click(bar, take_course)                                         # 「選擇通識領域」下拉 bar 按鈕
                         wait_to_click(wait_domain_option_by_text(driver, domain), take_course)  # 各領域選項
                         wait_to_click(wait_for_random_id_button(driver), take_course)           # 「確認」按鈕
